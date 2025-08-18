@@ -1,13 +1,17 @@
+// File: app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from 'next/font/google';
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Virtual Tour Kebun Jubung",
-  description: "Virtual Tour System for Kebun Jubung - PMM Jember",
-  keywords: "virtual tour, kebun jubung, pmm jember, wisata virtual",
+  description: "Sistem Virtual Tour 360° untuk Kebun Jubung - PMM Jember",
+  keywords: ["virtual tour", "360°", "kebun jubung", "pmm jember", "panorama"],
   authors: [{ name: "PMM Jember" }],
 };
 
@@ -18,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

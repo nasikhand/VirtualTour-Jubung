@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import PannellumViewer from './VirtualTourBase' // ✅ pastikan path ini sesuai
+import PannellumViewer from './PannellumViewer' // ✅ pastikan path ini sesuai
 
 type Props = {
   isOpen: boolean
@@ -60,11 +60,9 @@ export default function AdjustRotationModal({
         {/* Preview Panorama */}
         <div className="h-72 md:h-96 border-b">
           <PannellumViewer
-            key={`${yaw}-${pitch}`} // render ulang saat slider berubah
             imageUrl={imageUrl}
             initialYaw={yaw}
             initialPitch={pitch}
-            isDraggable={true}
           />
         </div>
 

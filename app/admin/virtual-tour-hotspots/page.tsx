@@ -192,14 +192,16 @@ export default function VirtualTourHotspotsPage() {
   // Konfigurasi sensor untuk DND Kit
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
+  // ... (semua state dan fungsi di dalam komponen biarkan sama) ...
+
   return (
     <>
       <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
         {/* KARTU MANAJEMEN MENU */}
         <div className="relative bg-white p-6 rounded-xl shadow-md">
           
-          {/* --- PREVIEW (SEKARANG MELAYANG DI KIRI ATAS) --- */}
-          <div className="absolute top-6 left-6 z-10 w-64 bg-black/30 backdrop-blur-md p-2 rounded-xl shadow-2xl border border-white/20">
+          {/* --- PREVIEW (SEKARANG MELAYANG) --- */}
+          <div className="absolute top-6 left-6 z-10 w-64 bg-black/20 backdrop-blur-md p-2 rounded-lg shadow-2xl border border-white/20">
             <div className="group relative aspect-[4/3] w-full rounded-md bg-transparent overflow-hidden">
               <img src={previewImage || '/placeholder-logo.png'} alt="Preview Logo" className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"/>
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
@@ -249,6 +251,7 @@ export default function VirtualTourHotspotsPage() {
           </div>
         </div>
 
+        {/* KARTU LOKASI VIRTUAL TOUR */}
         <div className="bg-white p-6 rounded-xl shadow-md mt-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Virtual Tour Location</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -257,6 +260,7 @@ export default function VirtualTourHotspotsPage() {
         </div>
       </div>
 
+      {/* MODAL */}
       <AddMenuItemModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddMenu} scenes={scenes.filter(scene => !menus.some(menu => menu.scene_id === scene.id))} isSaving={isSaving}/>
       <DeleteConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleConfirmDelete} isLoading={isDeleting} itemName={menuToDelete?.name || ''}/>
     </>

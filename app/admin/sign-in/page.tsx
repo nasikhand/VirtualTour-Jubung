@@ -1,0 +1,114 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
+
+export default function AdminSignInPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Simulasi login - nanti bisa diganti dengan API call ke web utama
+      if (formData.username === "admin" && formData.password === "admin123") {
+        // Simpan token ke localStorage
+        localStorage.setItem("adminToken", "dummy-admin-token");
+        toast.success("Login berhasil!");
+        
+        // Redirect ke admin dashboard
+        setTimeout(() => {
+          router.push("/admin");
+        }, 1000);
+      } else {
+        toast.error("Username atau password salah!");
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Login</h1>
+          <p className="text-gray-600">Virtual Tour Kebun Jubung</p>
+          <p className="text-sm text-gray-500 mt-2">PMM Jember</p>
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg">
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Masukkan username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Masukkan password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Memproses..." : "Login"}
+              </button>
+            </form>
+
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600 font-medium mb-2">Demo Credentials:</p>
+              <p className="text-xs text-gray-500">Username: admin</p>
+              <p className="text-xs text-gray-500">Password: admin123</p>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-500">
+                Nanti akan terintegrasi dengan sistem login web utama
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+    </div>
+  );
+}

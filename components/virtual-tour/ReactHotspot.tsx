@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Hotspot } from '@/types/virtual-tour';
+import { useViewer } from './VirtualTourBase';
 
 type Props = {
   hotspot: Hotspot;
-  viewer: any; // Menerima instance viewer langsung
   onClick?: (hotspot: Hotspot) => void;
 };
 
-export default function ReactHotspot({ hotspot, viewer, onClick }: Props) {
+export default function ReactHotspot({ hotspot, onClick }: Props) {
+  const viewerContext = useViewer();
+  const viewer = viewerContext?.viewer;
   const [position, setPosition] = useState<{ top: number; left: number; isVisible: boolean } | null>(null);
 
   const updatePosition = useCallback(() => {

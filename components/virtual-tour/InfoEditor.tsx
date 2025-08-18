@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import { X, Trash2, Plus, Volume2 } from "lucide-react";
 import { nanoid } from 'nanoid';
 
-// Props disederhanakan: onFileUpload & onFileDelete dihapus
 type Props = {
   isOpen: boolean;
   hotspot?: Partial<Hotspot> | null;
@@ -25,11 +24,9 @@ export default function InfoEditor({ isOpen, hotspot, onSave, onClose, onDelete,
     if (isOpen && hotspot) {
       setLabel(hotspot.label || '');
       setDescription(hotspot.description || '');
-      // Pastikan setiap sentence memiliki voiceSource, default ke 'browser'
       const initialSentences = hotspot.sentences?.map(s => ({ ...s, voiceSource: s.voiceSource || 'browser' })) || [];
       setSentences(initialSentences);
     } else {
-      // Reset form saat ditutup
       setLabel('');
       setDescription('');
       setSentences([]);
@@ -71,7 +68,7 @@ export default function InfoEditor({ isOpen, hotspot, onSave, onClose, onDelete,
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-16 right-4 bg-white rounded-lg shadow-2xl w-96 max-h-[85vh] flex flex-col z-20 animate-fade-in-scale">
+    <div className="absolute top-16 right-4 bg-white rounded-lg shadow-2xl w-96 max-h-[85vh] flex flex-col z-50 animate-fade-in-scale">
       <div className="flex-shrink-0 p-5 border-b flex justify-between items-center">
         <h3 className="font-semibold text-lg text-gray-800">{hotspot?.id ? 'Edit Info' : 'Add Info'}</h3>
         <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-100"><X size={20} /></button>
