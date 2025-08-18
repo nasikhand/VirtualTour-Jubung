@@ -5,14 +5,14 @@ import { Trash2 } from "lucide-react";
 type Props = {
   scene: VtourScene;
   onDelete?: (scene: VtourScene) => void;
-  // ✅ Prop baru untuk menentukan tujuan link
+  // ✅ Prop untuk menentukan tujuan link
   href?: string; 
 };
 
 export default function SceneCard({ scene, onDelete, href }: Props) {
-  const imageUrl = scene.image_path ? `/api/vtour/images/${scene.image_path}` : '/placeholder-image.jpg';
+  const imageUrl = scene.image_path ? `/api/vtour/images/${encodeURIComponent(scene.image_path)}` : '/placeholder-image.jpg';
 
-  // Tentukan URL tujuan, default ke halaman edit spot jika tidak ada prop href
+  // Tentukan URL tujuan, default ke halaman edit scene jika tidak ada prop href
   const targetUrl = href || `/admin/virtual-tour-section/scenes/${scene.id}/edit`;
 
   const cardContent = (

@@ -2,7 +2,7 @@
 import { VtourMenu, Scene } from "@/types/virtual-tour";
 
 // URL untuk Server Component (memerlukan path absolut)
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
 
 // URL untuk Client Component (bisa relatif)
 const apiBase = '/api/vtour';
@@ -27,8 +27,8 @@ export async function getSceneById(id: string | number) {
 
 // --- FUNGSI UNTUK MENUS ---
 export async function getVtourMenus(): Promise<VtourMenu[]> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const res = await fetch(`${appUrl}/api/vtour/menus`, { cache: 'no-store' });
+  const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const res = await fetch(`${laravelApiUrl}/vtour/menus`, { cache: 'no-store' });
 
   // ✅ Tambahkan pengecekan ini
   const contentType = res.headers.get("content-type");

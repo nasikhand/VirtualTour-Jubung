@@ -6,7 +6,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await req.json();
-    const res = await fetch(`${apiUrl}/api/vtour-menus/${params.id}`, {
+    const res = await fetch(`${apiUrl}/vtour/menus/${params.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 // DELETE: Hapus menu
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const res = await fetch(`${apiUrl}/api/vtour-menus/${params.id}`, {
+        const res = await fetch(`${apiUrl}/vtour/menus/${params.id}`, {
             method: 'DELETE',
         });
 

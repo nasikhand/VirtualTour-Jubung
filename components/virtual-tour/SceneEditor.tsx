@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Scene } from '@/types/virtual-tour'
 import Link from 'next/link'
-import PannellumViewer from './VirtualTourBase'
+import PannellumViewer from './PannellumViewer'
 import RenameSpotModal from './RenameSpotModal'
 import AdjustRotationModal from './AdjustRotationModal'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
@@ -32,7 +32,7 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
   // ✅ Menggunakan API Proxy untuk gambar
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '';
-    return `/api/vtour/images/${imagePath}`;
+    return `/api/vtour/images/${encodeURIComponent(imagePath)}`;
   };
   const imageUrl = getImageUrl(scene.image_path);
 
@@ -48,7 +48,7 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
   const handleDeleteScene = async () => {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/vtour/scenes/${scene.id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/virtual-tour/scenes/${scene.id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Gagal menghapus scene.')
       toast.success('Scene berhasil dihapus!')
       router.push('/admin/virtual-tour-section')
@@ -95,6 +95,9 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
                 imageUrl={imageUrl}
                 initialYaw={scene.default_yaw ?? 0}
                 initialPitch={scene.default_pitch ?? 0}
+                hotspots={[]}
+                onViewerClick={() => {}}
+                onHotspotClick={() => {}}
                 onCameraUpdate={setCurrentPosition}
               />
             </div>

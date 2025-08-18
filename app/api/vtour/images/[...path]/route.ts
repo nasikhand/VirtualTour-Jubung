@@ -4,14 +4,14 @@ const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function GET(
   req: NextRequest,
-  context: { params: { path: string[] } }
+  context: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    // ✅ PERBAIKAN: Ambil 'params' dari argumen kedua dan pastikan sudah ada
-    const params = context.params;
+    // ✅ PERBAIKAN: Await params untuk Next.js 15 compatibility
+    const params = await context.params;
     const imagePath = params.path.join('/');
     
-    const response = await fetch(`${laravelApiUrl}/storage/${imagePath}`);
+    const response = await fetch(`${laravelApiUrl}/vtour/storage/${imagePath}`);
 
     if (!response.ok) {
       return new NextResponse('Gambar tidak ditemukan di server backend', { status: 404 });

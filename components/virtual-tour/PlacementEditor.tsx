@@ -59,7 +59,7 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
       const existingHotspots = scene.hotspots?.filter(h => h.type === 'info') || [];
       for (const hotspot of existingHotspots) {
         if (hotspot.id && typeof hotspot.id !== 'string') {
-          await fetch(`/api/vtour/hotspots/${hotspot.id}`, { method: 'DELETE' });
+          await fetch(`/api/vtour/scenes/${scene.id}/hotspots/${hotspot.id}`, { method: 'DELETE' });
         }
       }
       
@@ -73,10 +73,10 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
           description: hotspot.description,
           sentences: hotspot.sentences || []
         };
-        await fetch(`/api/vtour/scenes/${scene.id}/hotspots`, {
+        await fetch(`/api/vtour/hotspots`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ ...payload, scene_id: scene.id })
         });
       }
       
@@ -112,7 +112,7 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
         {isAdding && (<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-lg shadow-lg font-semibold flex items-center gap-2 animate-bounce"><MousePointerClick size={18}/> Klik untuk menempatkan hotspot info.</div>)}
         
         <PannellumViewer 
-          imageUrl={`/api/vtour/images/${scene.image_path}`}
+          imageUrl={`/api/vtour/images/${encodeURIComponent(scene.image_path)}`}
           hotspots={hotspots}
           onViewerClick={handleViewerClick}
           onHotspotClick={handleHotspotClick}

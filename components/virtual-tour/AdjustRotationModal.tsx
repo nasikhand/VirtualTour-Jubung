@@ -7,7 +7,7 @@ type Props = {
   isOpen: boolean
   onClose: () => void
   currentPosition: { yaw: number; pitch: number }
-  onSave: (data: { yaw: number, pitch: number, hfov: number }) => void
+  onSave: (data: { yaw: number, pitch: number }) => void
   imageUrl: string // ✅ ditambahkan
 }
 
@@ -32,7 +32,7 @@ export default function AdjustRotationModal({
   }, [isOpen, currentPosition])
 
   const handleSave = () => {
-    onSave({ yaw, pitch, hfov })
+    onSave({ yaw, pitch })
     onClose()
   }
 

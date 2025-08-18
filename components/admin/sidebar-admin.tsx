@@ -6,7 +6,7 @@ import { sidebarMenuAdmin } from "@/lib/data/sidebar-menu-admin";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
-export default function Sidebar() {
+export default function SidebarAdmin() {
   const pathname = usePathname();
   const [open, setOpen] = useState<string | null>(null);
 

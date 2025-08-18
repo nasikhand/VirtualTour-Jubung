@@ -72,7 +72,7 @@ export default function VirtualTourClientPage({
         )}
 
         <PannellumViewer
-          imageUrl={`/api/vtour/images/${activeScene.image_path}`}
+          imageUrl={`/api/vtour/images/${encodeURIComponent(activeScene.image_path)}`}
           initialYaw={activeScene.default_yaw ?? 0}
           initialPitch={activeScene.default_pitch ?? 0}
           hotspots={activeScene.hotspots}

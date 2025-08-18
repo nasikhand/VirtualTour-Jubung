@@ -10,6 +10,7 @@ type Props = {
   hotspots?: Hotspot[];
   onViewerClick?: (coords: { pitch: number, yaw: number }) => void;
   onHotspotClick?: (hotspot: Hotspot) => void;
+  onCameraUpdate?: (position: { yaw: number, pitch: number }) => void;
 };
 
 const PANNLUM_SCRIPT_ID = 'pannellum-script';
@@ -22,6 +23,7 @@ export default function PannellumViewer({
   hotspots = [],
   onViewerClick,
   onHotspotClick,
+  onCameraUpdate,
 }: Props) {
   const panoramaRef = useRef<HTMLDivElement>(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
@@ -80,12 +82,25 @@ export default function PannellumViewer({
       });
     }
 
+    // Add camera update listener
+    if (onCameraUpdate && viewer) {
+      const updatePosition = () => {
+        const yaw = viewer.getYaw();
+        const pitch = viewer.getPitch();
+        onCameraUpdate({ yaw, pitch });
+      };
+      
+      viewer.on('animatefinished', updatePosition);
+      viewer.on('mouseup', updatePosition);
+      viewer.on('touchend', updatePosition);
+    }
+
     return () => {
       if (viewer && viewer.destroy) {
         viewer.destroy();
       }
     };
-  }, [isScriptLoaded, imageUrl, hotspots, onHotspotClick, onViewerClick, initialYaw, initialPitch]);
+  }, [isScriptLoaded, imageUrl, hotspots, onHotspotClick, onViewerClick, onCameraUpdate, initialYaw, initialPitch]);
 
   return (
     <div ref={panoramaRef} className="w-full h-full bg-gray-200">

@@ -21,8 +21,8 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
     setHotspots(scene.hotspots?.filter(h => h.type === 'link') || []);
     const fetchAllScenes = async () => {
       try {
-        const res = await fetch('/api/vtour/scenes?per_page=100');
-        if (res.ok) setAllScenes((await res.json()).data ?? []);
+        const response = await fetch('/api/vtour/scenes?per_page=100');
+         if (response.ok) setAllScenes((await response.json()).data ?? []);
       } catch { toast.error("Gagal memuat daftar scene tujuan."); }
     };
     fetchAllScenes();
@@ -65,7 +65,7 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
       const existingHotspots = scene.hotspots?.filter(h => h.type === 'link') || [];
       for (const hotspot of existingHotspots) {
         if (hotspot.id && typeof hotspot.id !== 'string') {
-          await fetch(`/api/vtour/hotspots/${hotspot.id}`, { method: 'DELETE' });
+          await fetch(`/api/vtour/scenes/${scene.id}/hotspots/${hotspot.id}`, { method: 'DELETE' });
         }
       }
       
@@ -79,11 +79,14 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
           target_scene_id: hotspot.target_scene_id,
           icon_name: hotspot.icon_name || 'default'
         };
-        await fetch(`/api/vtour/scenes/${scene.id}/hotspots`, {
+        const response = await fetch(`/api/vtour/scenes/${scene.id}/hotspots`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        if (!response.ok) {
+          throw new Error(`Failed to save hotspot: ${response.statusText}`);
+        }
       }
       
       toast.success('Semua perubahan berhasil disimpan!');
@@ -115,7 +118,7 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
         {isAdding && (<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-lg shadow-lg font-semibold flex items-center gap-2 animate-bounce"><MousePointerClick size={18}/> Klik di panorama untuk menempatkan hotspot.</div>)}
         
         <PannellumViewer 
-          imageUrl={`/api/vtour/images/${scene.image_path}`}
+          imageUrl={`/api/vtour/images/${encodeURIComponent(scene.image_path)}`}
           hotspots={hotspots}
           onViewerClick={handleViewerClick}
           onHotspotClick={handleHotspotClick}

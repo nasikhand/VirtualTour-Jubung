@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
 
     // Teruskan FormData ke backend Laravel
-    const res = await fetch(`${laravelApiUrl}/api/vtour/settings/logo`, {
+    const res = await fetch(`${laravelApiUrl}/vtour/settings/logo`, {
       method: 'POST',
       body: formData,
       // Penting: Jangan set Content-Type header secara manual saat mengirim FormData,

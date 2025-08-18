@@ -60,7 +60,7 @@ export default function VirtualTourHotspotsPage() {
       const [menuData, sceneRes, settingsRes] = await Promise.all([
         getVtourMenus(),
         fetch('/api/vtour/scenes?per_page=100'),
-        fetch('/api/vtour/settings')
+      fetch('/api/vtour/settings')
       ]);
       
       setMenus(menuData);
@@ -75,7 +75,7 @@ export default function VirtualTourHotspotsPage() {
       if (settingsRes.ok) {
         const settingsData = await settingsRes.json();
         if (settingsData.data?.vtour_logo_path) {
-          setPreviewImage(`/api/vtour/images/${settingsData.data.vtour_logo_path}`);
+          setPreviewImage(`/storage/vtour/${settingsData.data.vtour_logo_path}`);
         }
       }
 
@@ -147,14 +147,14 @@ export default function VirtualTourHotspotsPage() {
 
     const toastId = toast.loading("Mengupload logo...");
     try {
-        const res = await fetch('/api/vtour/settings/logo', {
+        const res = await fetch('/api/vtour/logo', {
             method: 'POST',
             body: formData,
         });
         if (!res.ok) throw new Error('Gagal upload logo ke server.');
         
         const result = await res.json();
-        setPreviewImage(`/api/vtour/images/${result.data.path}`); 
+        setPreviewImage(`/storage/vtour/${result.data.path}`); 
         toast.success("Logo berhasil diupload!", { id: toastId });
     } catch (error) {
         toast.error("Gagal mengupload logo.", { id: toastId });
