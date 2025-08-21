@@ -9,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const sceneId = params.id;
 
     // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/vtour/scenes/${sceneId}/hotspots`, {
+    const res = await fetch(`${apiUrl}/api/vtour/scenes/${sceneId}/hotspots`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

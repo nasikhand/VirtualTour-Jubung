@@ -6,7 +6,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 export async function GET(req: NextRequest) {
   try {
     const page = req.nextUrl.searchParams.get("page") || "1";
-    const res = await fetch(`${apiUrl}/vtour/scenes?page=${page}`);
+    const res = await fetch(`${apiUrl}/api/vtour/scenes?page=${page}`);
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const res = await fetch(`${apiUrl}/vtour/scenes`, {
+    const res = await fetch(`${apiUrl}/api/vtour/scenes`, {
       method: "POST",
       body: formData,
     });

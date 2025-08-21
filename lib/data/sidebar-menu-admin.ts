@@ -2,71 +2,26 @@
 
 export const sidebarMenuAdmin = [
   {
-    label: "Settings",
-    href: "/admin/settings",
-    icon: "settings", // optional, jika kamu pakai icon
-  },
-  {
     label: "Dashboard",
     href: "/admin",
-    icon: "dashboard", // ganti sesuai ikon yang kamu pakai
+    icon: "dashboard",
   },
   {
-    label: "Manage Content",
+    label: "Manajemen Virtual Tour",
     children: [
       {
-        label: "Welcome Section",
-        href: "/admin/welcome-section",
-      },
-      {
-        label: "Culinary Section",
-        href: "/admin/culinary-section",
-      },
-      {
-        label: "Event Section",
-        href: "/admin/event-section",
-      },
-      {
-        label: "Travel Map Section",
-        href: "/admin/travel-map-section",
-      },
-      {
-        label: "Articles Section",
-        href: "/admin/articles-section",
-      },
-      {
-        label: "Destinations Section",
-        href: "/admin/destination-section",
-      },
-      {
-        label: "About Us Section",
-        href: "/admin/about-us-section",
-      },
-      {
-        label: "Review Section",
-        href: "/admin/review-section",
-      },
-      {
-        label: "Gallery Section",
-        href: "/admin/gallery-section",
-      },
-      {
-        label: "Footer Section",
-        href: "/admin/footer-section",
-      },
-    ],
-  },
-  {
-    label: "Virtual Tour Section",
-    children: [
-      {
-        label: 'Manajemen Spot',
+        label: 'Manajemen Scene',
         href: '/admin/virtual-tour-section'
       },
       {
-        label: 'Manajemen Tur',
+        label: 'Manajemen Hotspot',
         href: '/admin/virtual-tour-hotspots'
       }
     ]
+  },
+  {
+    label: "Pengaturan",
+    href: "/admin/settings",
+    icon: "settings",
   },
 ];

@@ -11,7 +11,7 @@ export async function GET(
     const params = await context.params;
     const imagePath = params.path.join('/');
     
-    const response = await fetch(`${laravelApiUrl}/vtour/storage/${imagePath}`);
+    const response = await fetch(`${laravelApiUrl}/api/vtour/storage/${imagePath}`);
 
     if (!response.ok) {
       return new NextResponse('Gambar tidak ditemukan di server backend', { status: 404 });

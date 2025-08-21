@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react'
 import { Scene } from '@/types/virtual-tour'
 import SceneCard from '@/components/virtual-tour/SceneCard'
 import CreateSceneModal from '@/components/virtual-tour/CreateSceneModal'
-import { Plus, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ImageOff, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 // --- Komponen Helper (Tidak perlu diubah) ---
 
@@ -40,6 +41,9 @@ export default function VtourScenePage() {
   const [lastPage, setLastPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false) // State untuk mengontrol modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [sceneToDelete, setSceneToDelete] = useState<Scene | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const loadScenes = (page = 1) => {
     setLoading(true)
@@ -73,6 +77,45 @@ export default function VtourScenePage() {
     setIsModalOpen(false);
   }
 
+  const handleDeleteClick = (scene: Scene) => {
+    setSceneToDelete(scene)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!sceneToDelete || isDeleting) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/vtour/scenes/${sceneToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        toast.success('Scene berhasil dihapus!')
+        loadScenes(currentPage)
+        setIsDeleteModalOpen(false)
+        setSceneToDelete(null)
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || 'Gagal menghapus scene')
+      }
+    } catch (error) {
+      console.error('Error deleting scene:', error)
+      toast.error('Terjadi kesalahan saat menghapus scene')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false)
+    setSceneToDelete(null)
+  }
+
   const renderContent = () => {
     if (loading) {
       return <SceneGridSkeleton />;
@@ -84,7 +127,7 @@ export default function VtourScenePage() {
       <>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {scenes.map(scene => (
-            <SceneCard key={scene.id} scene={scene} />
+            <SceneCard key={scene.id} scene={scene} onDelete={handleDeleteClick} />
           ))}
         </div>
         {/* Paginasi */}

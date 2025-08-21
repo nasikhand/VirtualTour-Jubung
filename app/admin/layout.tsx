@@ -19,18 +19,16 @@ const AdminLayout: FC<AdminLayoutProps> = ({ children }) => {
       localStorage.removeItem("adminToken");
     }
 
-    // Check if accessed from main web app (referrer check)
-    const referrer = document.referrer;
-    const isFromMainApp = referrer.includes('localhost:3000');
+    // Skip auth check untuk halaman sign-in
+    if (window.location.pathname === '/admin/sign-in') {
+      setCheckingAuth(false);
+      return;
+    }
     
     const token = localStorage.getItem("adminToken");
     
-    // Skip authentication if accessed from main web app
-    if (isFromMainApp) {
-      // Set a temporary token for main app access
-      localStorage.setItem("adminToken", "main-app-access-token");
-      setCheckingAuth(false);
-    } else if (!token) {
+    // Wajib login untuk semua halaman admin (tidak ada bypass dari web utama)
+    if (!token) {
       toast.error("Silakan login terlebih dahulu.");
       router.push("/admin/sign-in");
     } else {

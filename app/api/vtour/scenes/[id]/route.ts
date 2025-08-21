@@ -5,7 +5,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 // GET: Ambil detail scene by ID
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const res = await fetch(`${apiUrl}/vtour/scenes/${params.id}`);
+    const res = await fetch(`${apiUrl}/api/vtour/scenes/${params.id}`);
     const json = await res.json();
     if (!res.ok) {
       return NextResponse.json({ message: "Gagal ambil detail scene" }, { status: res.status });
@@ -20,7 +20,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 // DELETE: Hapus scene by ID
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const res = await fetch(`${apiUrl}/vtour/scenes/${params.id}`, { method: "DELETE" });
+    const res = await fetch(`${apiUrl}/api/vtour/scenes/${params.id}`, { method: "DELETE" });
     const json = await res.json();
     if (!res.ok) {
       return NextResponse.json({ message: "Gagal hapus scene" }, { status: res.status });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
      // Tambahkan _method untuk memberi tahu Laravel ini adalah request PUT/PATCH
     formData.append('_method', 'PUT');
 
-    const res = await fetch(`${apiUrl}/vtour/scenes/${params.id}`, {
+    const res = await fetch(`${apiUrl}/api/vtour/scenes/${params.id}`, {
       method: "POST",
       body: formData,
     });

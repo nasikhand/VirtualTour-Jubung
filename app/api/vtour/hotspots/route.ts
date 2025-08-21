@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const queryString = searchParams.toString();
-    const url = queryString ? `${apiUrl}/vtour/hotspots?${queryString}` : `${apiUrl}/vtour/hotspots`;
+    const url = queryString ? `${apiUrl}/api/vtour/hotspots?${queryString}` : `${apiUrl}/api/vtour/hotspots`;
 
     // Meneruskan permintaan ke backend Laravel
     const res = await fetch(url, {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/vtour/hotspots`, {
+    const res = await fetch(`${apiUrl}/api/vtour/hotspots`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -5,7 +5,7 @@ const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL;
 export async function GET() {
   try {
     // Memanggil endpoint getVtourSettings di backend Laravel
-    const res = await fetch(`${laravelApiUrl}/vtour/settings`, {
+    const res = await fetch(`${laravelApiUrl}/api/vtour/settings`, {
         cache: 'no-store'
     });
 

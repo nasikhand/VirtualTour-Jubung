@@ -1,29 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Optimasi untuk deployment 2GB
+  compress: true,
+  poweredByHeader: false,
+  generateEtags: false,
+  
+  // Optimasi build
+  swcMinify: true,
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-slot'],
+  },
+  
+  // Image optimization
   images: {
-    domains: ['picsum.photos'], // <-- WAJIB agar aman
+    formats: ['image/webp'],
+    minimumCacheTTL: 60,
+    domains: ['localhost', '127.0.0.1'],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.cdninstagram.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'scontent-cgk2-1.cdninstagram.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'scontent-cgk2-2.cdninstagram.com',
-        pathname: '/**',
-        port: '',
-        pathname: '/**',
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/storage/**',
       },
       {
         protocol: 'http',
@@ -31,13 +30,15 @@ const nextConfig = {
         port: '8000',
         pathname: '/storage/**',
       },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8000',
-        pathname: '/storage/**',
-      },
     ],
+  },
+  
+  // Output optimization
+  output: 'standalone',
+  
+  // Disable telemetry
+  telemetry: {
+    enabled: false,
   },
 };
 

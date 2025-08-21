@@ -28,7 +28,7 @@ export async function getSceneById(id: string | number) {
 // --- FUNGSI UNTUK MENUS ---
 export async function getVtourMenus(): Promise<VtourMenu[]> {
   const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const res = await fetch(`${laravelApiUrl}/vtour/menus`, { cache: 'no-store' });
+  const res = await fetch(`${laravelApiUrl}/api/vtour/menus`, { cache: 'no-store' });
 
   // ✅ Tambahkan pengecekan ini
   const contentType = res.headers.get("content-type");

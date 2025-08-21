@@ -8,7 +8,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const hotspotId = params.id;
 
     // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/vtour/hotspots/${hotspotId}`, {
+    const res = await fetch(`${apiUrl}/api/vtour/hotspots/${hotspotId}`, {
       method: "DELETE",
       headers: {
         "Accept": "application/json",
@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const hotspotId = params.id;
 
     // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/vtour/hotspots/${hotspotId}`, {
+    const res = await fetch(`${apiUrl}/api/vtour/hotspots/${hotspotId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const hotspotId = params.id;
 
     // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/vtour/hotspots/${hotspotId}`, {
+    const res = await fetch(`${apiUrl}/api/vtour/hotspots/${hotspotId}`, {
       method: "GET",
       headers: {
         "Accept": "application/json",

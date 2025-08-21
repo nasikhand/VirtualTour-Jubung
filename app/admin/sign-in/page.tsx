@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -8,9 +8,42 @@ export default function AdminSignInPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
-    password: ""
+    password: "",
+    captcha: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaQuestion, setCaptchaQuestion] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState(0);
+
+  // Generate captcha
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const operators = ['+', '-', '*'];
+    const operator = operators[Math.floor(Math.random() * operators.length)];
+    
+    let answer;
+    switch (operator) {
+      case '+':
+        answer = num1 + num2;
+        break;
+      case '-':
+        answer = num1 - num2;
+        break;
+      case '*':
+        answer = num1 * num2;
+        break;
+      default:
+        answer = num1 + num2;
+    }
+    
+    setCaptchaQuestion(`${num1} ${operator} ${num2} = ?`);
+    setCaptchaAnswer(answer);
+  };
+
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,6 +58,15 @@ export default function AdminSignInPage() {
     setIsLoading(true);
 
     try {
+      // Validasi captcha terlebih dahulu
+      if (parseInt(formData.captcha) !== captchaAnswer) {
+        toast.error("Captcha salah! Silakan coba lagi.");
+        generateCaptcha(); // Generate captcha baru
+        setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
+        setIsLoading(false);
+        return;
+      }
+
       // Simulasi login - nanti bisa diganti dengan API call ke web utama
       if (formData.username === "admin" && formData.password === "admin123") {
         // Simpan token ke localStorage
@@ -37,9 +79,13 @@ export default function AdminSignInPage() {
         }, 1000);
       } else {
         toast.error("Username atau password salah!");
+        generateCaptcha(); // Generate captcha baru setelah login gagal
+        setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
       }
     } catch (error) {
       toast.error("Terjadi kesalahan saat login");
+      generateCaptcha(); // Generate captcha baru setelah error
+      setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +129,36 @@ export default function AdminSignInPage() {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="captcha" className="block text-sm font-medium text-gray-700">Captcha</label>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gray-100 px-4 py-2 rounded-md border font-mono text-lg font-bold text-gray-800 min-w-[120px] text-center">
+                    {captchaQuestion}
+                  </div>
+                  <input
+                    id="captcha"
+                    name="captcha"
+                    type="number"
+                    placeholder="Jawaban"
+                    value={formData.captcha}
+                    onChange={handleInputChange}
+                    required
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      generateCaptcha();
+                      setFormData(prev => ({ ...prev, captcha: "" }));
+                    }}
+                    className="px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+                    title="Generate captcha baru"
+                  >
+                    🔄
+                  </button>
+                </div>
               </div>
 
               <button
