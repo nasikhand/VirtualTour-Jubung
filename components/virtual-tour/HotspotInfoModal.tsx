@@ -1,8 +1,9 @@
 'use client';
 
 import { Hotspot } from "@/types/virtual-tour";
-import { X, Volume2 } from "lucide-react";
+import { X, Volume2, VolumeX, Info, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
+import { useState } from "react";
 
 type Props = {
   hotspot: Hotspot | null;
@@ -10,58 +11,165 @@ type Props = {
 };
 
 export default function HotspotInfoModal({ hotspot, onClose }: Props) {
+  const [isPlaying, setIsPlaying] = useState<string | null>(null);
+  const [playingUtterance, setPlayingUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  
   if (!hotspot) return null;
 
   // Fungsi untuk memutar suara dari teks menggunakan Web Speech API
-  const handlePlayAudio = (text: string) => {
-    window.speechSynthesis.cancel(); // Hentikan suara lain yang mungkin berjalan
+  const handlePlayAudio = (text: string, id: string) => {
+    // Stop any currently playing audio
+    if (playingUtterance) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(null);
+      setPlayingUtterance(null);
+      if (isPlaying === id) return; // If clicking the same button, just stop
+    }
+    
     if (!text.trim()) return;
 
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'id-ID'; // Set bahasa ke Indonesia
+      utterance.lang = 'id-ID';
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      
+      utterance.onstart = () => {
+        setIsPlaying(id);
+        setPlayingUtterance(utterance);
+      };
+      
+      utterance.onend = () => {
+        setIsPlaying(null);
+        setPlayingUtterance(null);
+      };
+      
+      utterance.onerror = () => {
+        setIsPlaying(null);
+        setPlayingUtterance(null);
+        toast.error("Gagal memutar audio");
+      };
+      
       window.speechSynthesis.speak(utterance);
+      toast.success("Memutar audio...");
     } else {
       toast.error("Browser Anda tidak mendukung fitur ucapan ini.");
     }
+  };
+  
+  const stopAudio = () => {
+    window.speechSynthesis.cancel();
+    setIsPlaying(null);
+    setPlayingUtterance(null);
   };
 
   return (
     // Backdrop transparan yang bisa diklik untuk menutup modal
     <div 
-      className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center p-4 backdrop-blur-sm animate-fade-in" 
-      onClick={onClose}
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4 backdrop-blur-md animate-fade-in" 
+      onClick={() => {
+        stopAudio();
+        onClose();
+      }}
     >
       <div 
-        className="bg-white w-full max-w-md rounded-xl shadow-2xl animate-fade-in-scale space-y-4"
-        onClick={(e) => e.stopPropagation()} // Mencegah modal tertutup saat konten di dalamnya diklik
+        className="bg-white w-full max-w-lg rounded-2xl shadow-2xl animate-fade-in-scale overflow-hidden border border-gray-100"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-5 pb-3 border-b">
-          <h3 className="text-xl font-bold text-gray-800">{hotspot.label}</h3>
-          <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700">
-            <X size={22} />
-          </button>
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm" />
+          <div className="relative z-10 flex justify-between items-start">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Info size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">{hotspot.label}</h3>
+                <p className="text-emerald-100 text-sm">Informasi Detail</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                stopAudio();
+                onClose();
+              }} 
+              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          {/* Decorative elements */}
+          <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-white/5 rounded-full" />
         </div>
         
-        <div className="px-5 max-h-[70vh] overflow-y-auto">
+        {/* Content */}
+        <div className="p-6 max-h-[60vh] overflow-y-auto">
           {hotspot.description && (
-            <p className="text-gray-600 pb-4">{hotspot.description}</p>
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={16} className="text-emerald-500" />
+                <h4 className="font-semibold text-gray-800">Deskripsi</h4>
+              </div>
+              <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border-l-4 border-emerald-400">
+                {hotspot.description}
+              </p>
+            </div>
           )}
 
           {hotspot.sentences && hotspot.sentences.length > 0 && (
-            <div className="space-y-2 pb-5">
-              {hotspot.sentences.map((sentence) => (
-                <div key={sentence.id} className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
-                  <p className="text-gray-800 flex-1">{sentence.clause}</p>
-                  <button 
-                    onClick={() => handlePlayAudio(sentence.clause)}
-                    className="ml-4 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-transform hover:scale-110"
-                    title="Dengarkan Suara"
-                  >
-                    <Volume2 size={18} />
-                  </button>
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Volume2 size={16} className="text-emerald-500" />
+                <h4 className="font-semibold text-gray-800">Audio Narasi</h4>
+                <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full">
+                  {hotspot.sentences.length} klip
+                </span>
+              </div>
+              
+              <div className="space-y-3">
+                {hotspot.sentences.map((sentence, index) => (
+                  <div key={sentence.id} className="group bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 hover:border-emerald-300 transition-all duration-200">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-1">
+                        {index + 1}
+                      </div>
+                      <p className="text-gray-800 flex-1 leading-relaxed">{sentence.clause}</p>
+                      <button 
+                        onClick={() => handlePlayAudio(sentence.clause, sentence.id.toString())}
+                        className={`p-3 rounded-full transition-all duration-200 flex-shrink-0 ${
+                          isPlaying === sentence.id.toString()
+                            ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                            : 'bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-110'
+                        }`}
+                        title={isPlaying === sentence.id.toString() ? "Stop Audio" : "Putar Audio"}
+                      >
+                        {isPlaying === sentence.id.toString() ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Audio Controls */}
+              <div className="mt-4 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-emerald-700 font-medium">Kontrol Audio</span>
+                  {isPlaying && (
+                    <button
+                      onClick={stopAudio}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-xs transition-colors"
+                    >
+                      Stop Semua
+                    </button>
+                  )}
                 </div>
-              ))}
+                <p className="text-emerald-600 text-xs mt-1">
+                  Klik tombol audio untuk mendengarkan narasi • Bahasa: Indonesia
+                </p>
+              </div>
             </div>
           )}
         </div>

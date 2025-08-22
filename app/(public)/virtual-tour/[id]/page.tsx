@@ -120,5 +120,5 @@ export default function VirtualTourDynamicPage() {
     );
   }
 
-  return <VirtualTourClientPage menus={menus} initialScene={initialScene} logoUrl={settings?.vtour_logo_path || ''} />;
+  return <VirtualTourClientPage menus={menus} initialScene={initialScene} logoUrl={settings?.vtour_logo_url || ''} />;
 }

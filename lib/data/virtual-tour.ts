@@ -9,15 +9,17 @@ const apiBase = '/api/vtour';
 
 // --- FUNGSI UNTUK SCENES ---
 export async function getScenesPaginated(page = 1) {
-  // Fungsi ini kemungkinan dipanggil dari client, jadi kita gunakan path relatif
-  const res = await fetch(`${apiBase}/scenes?page=${page}`);
+  // Gunakan Laravel API URL untuk mengakses backend
+  const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const res = await fetch(`${laravelApiUrl}/api/vtour/scenes?page=${page}`);
   if (!res.ok) throw new Error(`Gagal memuat scene`);
   return res.json();
 }
 
 export async function getSceneById(id: string | number) {
-  // Fungsi ini kemungkinan dipanggil dari server component, jadi kita gunakan path absolut
-  const res = await fetch(`${appUrl}${apiBase}/scenes/${id}`, { cache: 'no-store' });
+  // Gunakan Laravel API URL untuk mengakses backend
+  const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const res = await fetch(`${laravelApiUrl}/api/vtour/scenes/${id}`, { cache: 'no-store' });
   if (!res.ok) {
     if (res.status === 404) return null;
     throw new Error(`Gagal memuat scene`);

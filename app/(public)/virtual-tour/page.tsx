@@ -42,6 +42,10 @@ export default function VirtualTourPage() {
         
         if (settingsResponse.ok) {
           const settingsData = await settingsResponse.json();
+          // Add cache-busting parameter to logo URL to prevent browser caching
+          if (settingsData.data && settingsData.data.vtour_logo_url) {
+            settingsData.data.vtour_logo_url = `${settingsData.data.vtour_logo_url}?t=${Date.now()}`;
+          }
           setSettings(settingsData.data || {});
         }
       } catch (err) {

@@ -19,6 +19,7 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
   const [selectedHotspot, setSelectedHotspot] = useState<Partial<Hotspot> | null>(null);
   const [showDraggableHotspot, setShowDraggableHotspot] = useState(false);
   const [tempHotspotCoords, setTempHotspotCoords] = useState({ pitch: 0, yaw: 0 });
+  const [dragInitialPosition, setDragInitialPosition] = useState({ x: 50, y: 50 });
   
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
@@ -33,6 +34,26 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
     };
     fetchAllScenes();
   }, [scene]);
+
+  // Fungsi untuk reload hotspot dari server
+  const reloadHotspots = async () => {
+    try {
+      console.log('LinkHotspotEditor: Reloading hotspots for scene:', scene.id);
+      const response = await fetch(`/api/vtour/scenes/${scene.id}/hotspots`);
+      if (response.ok) {
+        const hotspotsData = await response.json();
+        console.log('LinkHotspotEditor: Received hotspots data:', hotspotsData);
+        const linkHotspots = hotspotsData.filter((h: Hotspot) => h.type === 'link');
+        console.log('LinkHotspotEditor: Filtered link hotspots:', linkHotspots);
+        setHotspots(linkHotspots);
+        console.log('LinkHotspotEditor: Hotspots state updated successfully');
+      } else {
+        console.error('LinkHotspotEditor: Failed to reload hotspots, response not ok:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('LinkHotspotEditor: Failed to reload hotspots:', error);
+    }
+  };
 
   const handleViewerClick = (coords: { pitch: number, yaw: number }) => {
     console.log('handleViewerClick called:', { coords, isAdding });
@@ -52,7 +73,15 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
     setIsDirty(true);
   };
 
-  const handleAddWithDraggable = () => {
+  const handleAddWithDraggable = (e?: React.MouseEvent) => {
+    if (e && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setDragInitialPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+    } else {
+      setDragInitialPosition({ x: 50, y: 50 }); // Default ke tengah jika tidak ada event
+    }
     setShowDraggableHotspot(true);
     setIsAdding(false);
   };
@@ -66,6 +95,8 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
   };
 
   const handleDraggableConfirm = () => {
+    console.log('LinkHotspotEditor: Draggable confirm called with coords:', tempHotspotCoords);
+    
     const newHotspot: Hotspot = {
       id: nanoid(),
       scene_id: scene.id,
@@ -73,10 +104,15 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
       pitch: tempHotspotCoords.pitch,
       yaw: tempHotspotCoords.yaw,
       label: 'New Location',
-      icon_name: 'location'
+      icon_name: 'default'
     };
 
-    setHotspots(prev => [...prev, newHotspot]);
+    console.log('LinkHotspotEditor: Creating new hotspot:', newHotspot);
+    setHotspots(prev => {
+      const updated = [...prev, newHotspot];
+      console.log('LinkHotspotEditor: Updated hotspots array:', updated);
+      return updated;
+    });
     setSelectedHotspot(newHotspot);
     setIsModalOpen(true);
     setShowDraggableHotspot(false);
@@ -100,41 +136,77 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
   };
 
   const handleSaveAll = async () => {
-    if (!isDirty) return;
+    if (!isDirty) {
+      console.log('LinkHotspotEditor: No changes to save');
+      return;
+    }
+    
+    console.log('LinkHotspotEditor: Starting save process with hotspots:', hotspots);
     setIsSaving(true);
+    
     try {
       // Hapus hotspot yang ada di database untuk scene ini
       const existingHotspots = scene.hotspots?.filter(h => h.type === 'link') || [];
+      console.log('LinkHotspotEditor: Existing hotspots to delete:', existingHotspots);
+      
       for (const hotspot of existingHotspots) {
         if (hotspot.id && typeof hotspot.id !== 'string') {
-          await fetch(`/api/vtour/scenes/${scene.id}/hotspots/${hotspot.id}`, { method: 'DELETE' });
+          console.log('LinkHotspotEditor: Deleting existing hotspot:', hotspot.id);
+          const deleteResponse = await fetch(`/api/vtour/hotspots/${hotspot.id}`, { method: 'DELETE' });
+          console.log('LinkHotspotEditor: Delete response:', deleteResponse.status);
         }
       }
       
       // Simpan semua hotspot baru
+      console.log('LinkHotspotEditor: Saving new hotspots:', hotspots.length);
+      const savedHotspots = [];
+      
       for (const hotspot of hotspots) {
+        // Validasi koordinat sebelum menyimpan
+        if (!hotspot.yaw && hotspot.yaw !== 0 || !hotspot.pitch && hotspot.pitch !== 0) {
+          console.warn('LinkHotspotEditor: Skipping hotspot with invalid coordinates:', hotspot);
+          continue;
+        }
+        
         const payload = {
           type: hotspot.type,
-          yaw: hotspot.yaw,
-          pitch: hotspot.pitch,
-          label: hotspot.label,
+          yaw: Number(hotspot.yaw),
+          pitch: Number(hotspot.pitch),
+          label: hotspot.label || 'New Location',
           target_scene_id: hotspot.target_scene_id,
           icon_name: hotspot.icon_name || 'default'
         };
+        
+        console.log('LinkHotspotEditor: Saving hotspot payload:', payload);
+        
         const response = await fetch(`/api/vtour/scenes/${scene.id}/hotspots`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('LinkHotspotEditor: Failed to save hotspot:', response.status, errorText);
           throw new Error(`Failed to save hotspot: ${response.statusText}`);
         }
+        
+        const savedHotspot = await response.json();
+        console.log('LinkHotspotEditor: Hotspot saved successfully:', savedHotspot);
+        savedHotspots.push(savedHotspot);
       }
       
-      toast.success('Semua perubahan berhasil disimpan!');
+      toast.success(`${savedHotspots.length} hotspot berhasil disimpan!`);
       setIsDirty(false);
+      
+      // Reload hotspot dari server untuk menampilkan data terbaru
+      console.log('LinkHotspotEditor: Save completed, calling reloadHotspots...');
+      await reloadHotspots();
+      console.log('LinkHotspotEditor: reloadHotspots completed');
+      
     } catch (error) {
-      toast.error('Gagal menyimpan perubahan.');
+      console.error('LinkHotspotEditor: Save error:', error);
+      toast.error('Gagal menyimpan perubahan: ' + (error as Error).message);
     } finally {
       setIsSaving(false);
     }
@@ -145,21 +217,15 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
     <>
       <div ref={containerRef} className="relative w-full h-screen bg-white overflow-hidden">
         <div className="absolute top-4 right-4 z-20 flex gap-2">
-          {!showDraggableHotspot ? (
-            <div className="flex gap-1">
-              <button onClick={() => setIsAdding(!isAdding)} className={`font-semibold px-3 py-2 rounded-l-lg shadow-lg flex items-center gap-2 transition-colors ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-white/90 text-gray-800 hover:bg-white'}`}>
-                {isAdding ? <X size={16} /> : <Plus size={16} />}
-                {isAdding ? 'Cancel' : 'Click Mode'}
-              </button>
-              <button onClick={handleAddWithDraggable} className="bg-green-500 text-white font-semibold px-3 py-2 rounded-r-lg shadow-lg hover:bg-green-600 flex items-center gap-2 transition-colors">
+          <div className="flex gap-1">
+            <button onClick={() => setIsAdding(!isAdding)} className={`font-semibold px-3 py-2 rounded-l-lg shadow-lg flex items-center gap-2 transition-colors ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-white/90 text-gray-800 hover:bg-white'}`}>
+              {isAdding ? <X size={16} /> : <Plus size={16} />}
+              {isAdding ? 'Cancel' : 'Click Mode'}
+            </button>
+            <button onClick={(e) => handleAddWithDraggable(e)} className="bg-green-500 text-white font-semibold px-3 py-2 rounded-r-lg shadow-lg hover:bg-green-600 flex items-center gap-2 transition-colors">
                 <Plus size={16} /> Drag Mode
               </button>
-            </div>
-          ) : (
-            <button onClick={handleCancelDraggable} className="bg-red-500 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:bg-red-600 flex items-center gap-2">
-              <X size={16} /> Cancel Drag
-            </button>
-          )}
+          </div>
           <button onClick={handleSaveAll} disabled={!isDirty || isSaving} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
             <Save size={18} /> {isSaving ? 'Menyimpan...' : 'Save Changes'}
           </button>
@@ -190,6 +256,7 @@ export default function LinkHotspotEditor({ scene }: { scene: Scene }) {
             onConfirm={handleDraggableConfirm}
             containerRef={containerRef}
             viewerRef={viewerRef}
+            initialPosition={dragInitialPosition}
           />
         )}
       </div>

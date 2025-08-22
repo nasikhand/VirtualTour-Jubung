@@ -18,12 +18,26 @@ type Props = {
 export default function LinkHotspotModal({ isOpen, onClose, onSave, onDelete, hotspot, scenes, isSaving }: Props) {
   const [targetSceneId, setTargetSceneId] = useState<number | null>(null);
   const [label, setLabel] = useState('');
+  const [iconName, setIconName] = useState('default');
+  
+  // Daftar ikon yang tersedia
+  const availableIcons = [
+    { value: 'default', label: 'Default' },
+    { value: 'arrow', label: 'Arrow' },
+    { value: 'door', label: 'Door' },
+    { value: 'stairs', label: 'Stairs' },
+    { value: 'elevator', label: 'Elevator' },
+    { value: 'exit', label: 'Exit' },
+    { value: 'info', label: 'Info' },
+    { value: 'warning', label: 'Warning' },
+  ];
 
   useEffect(() => {
     if (hotspot) {
       setTargetSceneId(hotspot.target_scene_id || null);
       const defaultLabel = scenes.find(s => s.id === hotspot.target_scene_id)?.name || '';
       setLabel(hotspot.label || defaultLabel);
+      setIconName(hotspot.icon_name || 'default');
     }
   }, [hotspot, scenes]);
 
@@ -37,6 +51,7 @@ export default function LinkHotspotModal({ isOpen, onClose, onSave, onDelete, ho
       label: label.trim() || sceneName,
       target_scene_id: targetSceneId,
       type: 'link',
+      icon_name: iconName,
     });
   };
 
@@ -67,6 +82,20 @@ export default function LinkHotspotModal({ isOpen, onClose, onSave, onDelete, ho
               onChange={setTargetSceneId}
               placeholder="Pilih destinasi..."
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">Ikon Hotspot</label>
+            <select
+              value={iconName}
+              onChange={(e) => setIconName(e.target.value)}
+              className="w-full border border-gray-300 rounded-md p-2 bg-white"
+            >
+              {availableIcons.map((icon) => (
+                <option key={icon.value} value={icon.value}>
+                  {icon.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="p-4 bg-gray-50 border-t flex justify-between items-center rounded-b-xl">

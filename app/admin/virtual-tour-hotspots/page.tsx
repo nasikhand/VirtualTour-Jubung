@@ -74,8 +74,8 @@ export default function VirtualTourHotspotsPage() {
 
       if (settingsRes.ok) {
         const settingsData = await settingsRes.json();
-        if (settingsData.data?.vtour_logo_path) {
-          setPreviewImage(`http://localhost:8000/storage/vtour/${settingsData.data.vtour_logo_path}`);
+        if (settingsData.data?.vtour_logo_url) {
+          setPreviewImage(settingsData.data.vtour_logo_url);
         }
       }
 
@@ -154,10 +154,8 @@ export default function VirtualTourHotspotsPage() {
         if (!res.ok) throw new Error('Gagal upload logo ke server.');
         
         const result = await res.json();
-        // Konsistensi dengan format loading awal
-        if (result.data?.vtour_logo_path) {
-          setPreviewImage(`http://localhost:8000/storage/vtour/${result.data.vtour_logo_path}`);
-        } else if (result.data?.url) {
+        // Gunakan URL yang dikembalikan dari API
+        if (result.data?.url) {
           setPreviewImage(result.data.url);
         } 
         toast.success("Logo berhasil diupload!", { id: toastId });

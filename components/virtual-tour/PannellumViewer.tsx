@@ -1,7 +1,7 @@
 // frontend/components/virtual-tour/PannellumViewer.tsx
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Hotspot } from '@/types/virtual-tour';
 
 // Deklarasikan pannellum pada object window untuk type safety
@@ -21,7 +21,7 @@ type Props = {
   onCameraUpdate?: (position: { yaw: number; pitch: number }) => void;
 };
 
-export default function PannellumViewer({
+const PannellumViewer = forwardRef<any, Props>(function PannellumViewer({
   imageUrl,
   initialYaw = 0,
   initialPitch = 0,
@@ -29,9 +29,12 @@ export default function PannellumViewer({
   onViewerClick,
   onHotspotClick,
   onCameraUpdate,
-}: Props) {
+}, ref) {
   const panoramaRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
+  
+  // Expose viewer instance to parent component
+  useImperativeHandle(ref, () => viewerRef.current, []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
@@ -182,32 +185,57 @@ export default function PannellumViewer({
 
    // Separate effect for hotspot updates to avoid re-initializing viewer
    useEffect(() => {
-     if (viewerRef.current && window.pannellum) {
+     if (viewerRef.current && window.pannellum && isInitialized) {
        // Update hotspots without reinitializing the entire viewer
        try {
          const viewer = viewerRef.current;
-         // Remove existing hotspots
-         const existingHotspots = viewer.getScene().getHotSpotIds();
-         existingHotspots.forEach((id: string) => {
-           viewer.removeHotSpot(id);
-         });
+         console.log('PannellumViewer: Updating hotspots, count:', hotspots.length);
+         
+         // Remove existing hotspots - use try-catch for each removal
+         try {
+           const existingHotspots = viewer.getScene().getHotSpotIds();
+           console.log('PannellumViewer: Removing existing hotspots:', existingHotspots);
+           existingHotspots.forEach((id: string) => {
+             try {
+               viewer.removeHotSpot(id);
+             } catch (removeError) {
+               console.warn('Failed to remove hotspot:', id, removeError);
+             }
+           });
+         } catch (getError) {
+           console.warn('Failed to get existing hotspots, continuing with add:', getError);
+         }
          
          // Add new hotspots
-         hotspots.forEach((hotspot) => {
-           viewer.addHotSpot({
-             id: hotspot.id.toString(),
-             pitch: hotspot.pitch,
-             yaw: hotspot.yaw,
-             type: 'info',
-             text: hotspot.title,
-             clickHandlerFunc: () => onHotspotClick?.(hotspot),
-           });
+         hotspots.forEach((hotspot, index) => {
+           try {
+             console.log(`PannellumViewer: Adding hotspot ${index + 1}:`, hotspot);
+             viewer.addHotSpot({
+               id: hotspot.id.toString(),
+               pitch: hotspot.pitch,
+               yaw: hotspot.yaw,
+               type: 'info',
+               text: hotspot.label || hotspot.title || 'Hotspot',
+               cssClass: `custom-hotspot ${hotspot.type}-hotspot hotspot-icon-${hotspot.icon_name || 'default'}`,
+               clickHandlerFunc: () => onHotspotClick?.(hotspot),
+             });
+           } catch (addError) {
+             console.error('Failed to add hotspot:', hotspot, addError);
+           }
          });
+         
+         console.log('PannellumViewer: Hotspot update completed successfully');
        } catch (error) {
-         console.warn('Failed to update hotspots:', error);
+         console.error('PannellumViewer: Failed to update hotspots:', error);
        }
+     } else {
+       console.log('PannellumViewer: Skipping hotspot update - viewer not ready:', {
+         hasViewer: !!viewerRef.current,
+         hasPannellum: !!window.pannellum,
+         isInitialized
+       });
      }
-   }, [hotspots, onHotspotClick]);
+   }, [hotspots, onHotspotClick, isInitialized]);
 
   return (
     <div className="relative w-full h-full bg-gray-900">
@@ -246,4 +274,6 @@ export default function PannellumViewer({
       )}
     </div>
   );
-}
+});
+
+export default PannellumViewer;
