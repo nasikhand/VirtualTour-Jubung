@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { sidebarMenuAdmin } from "@/lib/data/sidebar-menu-admin";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
@@ -12,11 +12,7 @@ export default function SidebarAdmin() {
   const router = useRouter();
   const [open, setOpen] = useState<string | null>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    toast.success("Logout berhasil!");
-    router.push("/admin/sign-in");
-  };
+
 
   return (
     <aside className="h-screen w-64 bg-white border-r shadow-sm">
@@ -73,17 +69,7 @@ export default function SidebarAdmin() {
           ))}
         </ul>
       </nav>
-      
-      {/* Logout Button */}
-      <div className="absolute bottom-4 left-2 right-2">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 rounded hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Logout
-        </button>
-      </div>
+
     </aside>
   );
 }

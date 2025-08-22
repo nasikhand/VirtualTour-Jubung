@@ -129,7 +129,7 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
                 onClick={() => setIsPlacementMode(true)} 
                 className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
-                GO PLACEMENT CONTROLS
+                Add Info Hotspot
               </button>
             </div>
           </div>

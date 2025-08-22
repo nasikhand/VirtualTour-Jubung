@@ -48,14 +48,14 @@ export default function AdminWelcomePage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pengunjung</p>
-                  <p className="text-2xl font-bold text-gray-900">-</p>
+                  <p className="text-sm font-medium text-gray-600">Disk Usage</p>
+                  <p className="text-2xl font-bold text-gray-900">2.1 GB</p>
                 </div>
               </div>
             </CardContent>
@@ -153,21 +153,26 @@ export default function AdminWelcomePage() {
            </Card>
          </div>
 
-         {/* Analytics & Settings */}
+         {/* System Settings & Storage */}
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <Card>
              <CardContent className="p-6">
-               <h3 className="text-lg font-semibold text-gray-900 mb-4">Analytics & Reports</h3>
-               <p className="text-gray-600 mb-4">Statistik pengunjung dan laporan interaksi</p>
+               <div className="flex items-center mb-4">
+                 <div className="p-2 bg-orange-100 rounded-lg">
+                   <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                   </svg>
+                 </div>
+                 <h3 className="text-lg font-semibold text-gray-900 ml-3">Pengaturan Sistem</h3>
+               </div>
+               <p className="text-gray-600 mb-4">Konfigurasi dan pengaturan virtual tour</p>
                <div className="space-y-2">
-                 <button className="w-full bg-purple-100 text-purple-700 py-2 px-4 rounded-lg hover:bg-purple-200 transition-colors">
-                   Statistik Pengunjung
+                 <button className="w-full bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors">
+                   Pengaturan Tour
                  </button>
-                 <button className="w-full bg-purple-100 text-purple-700 py-2 px-4 rounded-lg hover:bg-purple-200 transition-colors">
-                   Laporan Hotspot
-                 </button>
-                 <button className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">
-                   Export Data
+                 <button className="w-full bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors">
+                   Konfigurasi Display
                  </button>
                </div>
              </CardContent>
@@ -175,17 +180,30 @@ export default function AdminWelcomePage() {
 
            <Card>
              <CardContent className="p-6">
-               <h3 className="text-lg font-semibold text-gray-900 mb-4">Pengaturan Sistem</h3>
-               <p className="text-gray-600 mb-4">Konfigurasi dan pengaturan aplikasi</p>
+               <div className="flex items-center mb-4">
+                 <div className="p-2 bg-indigo-100 rounded-lg">
+                   <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                   </svg>
+                 </div>
+                 <h3 className="text-lg font-semibold text-gray-900 ml-3">Storage Management</h3>
+               </div>
+               <p className="text-gray-600 mb-4">Monitor dan kelola penyimpanan file</p>
                <div className="space-y-2">
-                 <button className="w-full bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors">
-                   Pengaturan Umum
+                 <div className="bg-gray-50 p-3 rounded-lg">
+                   <div className="flex justify-between items-center mb-2">
+                     <span className="text-sm text-gray-600">Used Space</span>
+                     <span className="text-sm font-medium text-gray-900">2.1 GB / 10 GB</span>
+                   </div>
+                   <div className="w-full bg-gray-200 rounded-full h-2">
+                     <div className="bg-indigo-600 h-2 rounded-full" style={{width: '21%'}}></div>
+                   </div>
+                 </div>
+                 <button className="w-full bg-indigo-100 text-indigo-700 py-2 px-4 rounded-lg hover:bg-indigo-200 transition-colors">
+                   Bersihkan Cache
                  </button>
-                 <button className="w-full bg-orange-100 text-orange-700 py-2 px-4 rounded-lg hover:bg-orange-200 transition-colors">
-                   Manajemen User
-                 </button>
-                 <button className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">
-                   Backup Data
+                 <button className="w-full bg-red-100 text-red-700 py-2 px-4 rounded-lg hover:bg-red-200 transition-colors">
+                   Hapus File Lama
                  </button>
                </div>
              </CardContent>

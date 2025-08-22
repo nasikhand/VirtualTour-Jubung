@@ -17,14 +17,14 @@ export default function VirtualTourPage() {
         
         // Fetch menus and settings in parallel
         const [menusResponse, settingsResponse] = await Promise.all([
-          fetch(`${apiUrl}/vtour/menus`, {
+          fetch(`${apiUrl}/api/vtour/menus`, {
             cache: 'no-store',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
             },
           }),
-          fetch(`${apiUrl}/vtour/settings`, {
+          fetch(`${apiUrl}/api/vtour/settings`, {
             cache: 'no-store',
             headers: {
               'Accept': 'application/json',
@@ -100,5 +100,5 @@ export default function VirtualTourPage() {
     );
   }
 
-  return <VirtualTourClientPage menus={menus} initialScene={menus[0]?.scene || {} as Scene} logoUrl={settings?.vtour_logo_path || ''} />;
+  return <VirtualTourClientPage menus={menus} initialScene={menus[0]?.scene || {} as Scene} logoUrl={settings?.vtour_logo_url || ''} />;
 }

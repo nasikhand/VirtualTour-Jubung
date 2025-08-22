@@ -47,7 +47,7 @@ export default function VirtualTourHotspotsPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>("/placeholder-logo.png");
+  const [previewImage, setPreviewImage] = useState<string | null>("/placeholder-logo.svg");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [menuToDelete, setMenuToDelete] = useState<VtourMenu | null>(null);
@@ -75,7 +75,7 @@ export default function VirtualTourHotspotsPage() {
       if (settingsRes.ok) {
         const settingsData = await settingsRes.json();
         if (settingsData.data?.vtour_logo_path) {
-          setPreviewImage(`/storage/vtour/${settingsData.data.vtour_logo_path}`);
+          setPreviewImage(`http://localhost:8000/storage/vtour/${settingsData.data.vtour_logo_path}`);
         }
       }
 
@@ -147,14 +147,19 @@ export default function VirtualTourHotspotsPage() {
 
     const toastId = toast.loading("Mengupload logo...");
     try {
-        const res = await fetch('/api/vtour/logo', {
+        const res = await fetch('/api/vtour/settings/logo', {
             method: 'POST',
             body: formData,
         });
         if (!res.ok) throw new Error('Gagal upload logo ke server.');
         
         const result = await res.json();
-        setPreviewImage(`/storage/vtour/${result.data.path}`); 
+        // Konsistensi dengan format loading awal
+        if (result.data?.vtour_logo_path) {
+          setPreviewImage(`http://localhost:8000/storage/vtour/${result.data.vtour_logo_path}`);
+        } else if (result.data?.url) {
+          setPreviewImage(result.data.url);
+        } 
         toast.success("Logo berhasil diupload!", { id: toastId });
     } catch (error) {
         toast.error("Gagal mengupload logo.", { id: toastId });
@@ -203,10 +208,10 @@ export default function VirtualTourHotspotsPage() {
           {/* --- PREVIEW (SEKARANG MELAYANG) --- */}
           <div className="absolute top-6 left-6 z-10 w-64 bg-black/20 backdrop-blur-md p-2 rounded-lg shadow-2xl border border-white/20">
             <div className="group relative aspect-[4/3] w-full rounded-md bg-transparent overflow-hidden">
-              <img src={previewImage || '/placeholder-logo.png'} alt="Preview Logo" className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"/>
+              <img src={previewImage || '/placeholder-logo.svg'} alt="Preview Logo" className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"/>
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                 <button onClick={() => fileInputRef.current?.click()} className="p-2 bg-white/80 rounded-full text-gray-800 hover:bg-white" title="Ganti Logo"><Upload size={18} /></button>
-                <button onClick={() => setPreviewImage('/placeholder-logo.png')} className="p-2 bg-white/80 rounded-full text-gray-800 hover:bg-white" title="Hapus Logo"><Trash2 size={18} /></button>
+                <button onClick={() => setPreviewImage('/placeholder-logo.svg')} className="p-2 bg-white/80 rounded-full text-gray-800 hover:bg-white" title="Hapus Logo"><Trash2 size={18} /></button>
               </div>
               <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
             </div>

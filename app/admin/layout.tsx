@@ -44,6 +44,18 @@ const AdminLayout: FC<AdminLayoutProps> = ({ children }) => {
     );
   }
 
+  // Don't show sidebar on sign-in page
+  const isSignInPage = typeof window !== 'undefined' && window.location.pathname === '/admin/sign-in';
+
+  if (isSignInPage) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {children}
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarAdmin />
