@@ -13,21 +13,21 @@ import toast from 'react-hot-toast'
 const SceneGridSkeleton = () => (
   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
     {[...Array(8)].map((_, i) => (
-      <div key={i} className="h-56 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700"></div>
+      <div key={i} className="h-56 w-full animate-pulse rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 shadow-lg"></div>
     ))}
   </div>
 );
 
 const EmptyState = () => (
-  <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 py-24 text-center">
-    <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-4">
-      <ImageOff className="text-gray-400 dark:text-gray-500" size={32} />
+  <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 py-24 text-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-inner">
+    <div className="rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 p-6 shadow-lg">
+      <ImageOff className="text-blue-500 dark:text-blue-400" size={40} />
     </div>
-    <h2 className="mt-6 text-xl font-semibold text-gray-900 dark:text-white">
+    <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
       Belum Ada Scene Ditemukan
     </h2>
-    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-      Mulai dengan menekan tombol <strong>"+ Tambah Scene"</strong> di pojok kanan atas.
+    <p className="mt-2 text-gray-600 dark:text-gray-300 max-w-md">
+      Mulai dengan menekan tombol <strong className="text-blue-600 dark:text-blue-400">"+ Tambah Scene"</strong> di pojok kanan atas untuk membuat scene virtual tour pertama Anda.
     </p>
   </div>
 );
@@ -40,7 +40,7 @@ export default function VtourScenePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [lastPage, setLastPage] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false) // State untuk mengontrol modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false) // State untuk mengontrol modal create scene
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [sceneToDelete, setSceneToDelete] = useState<Scene | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -74,7 +74,7 @@ export default function VtourScenePage() {
 
   const handleSuccess = () => {
     loadScenes(1);
-    setIsModalOpen(false);
+    setIsCreateModalOpen(false);
   }
 
   const handleDeleteClick = (scene: Scene) => {
@@ -136,18 +136,20 @@ export default function VtourScenePage() {
              <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-2 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium transition hover:bg-gray-100 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 border border-gray-200 dark:border-gray-700 shadow-sm"
               >
                 <ChevronLeft size={16} />
                 Sebelumnya
               </button>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Halaman {currentPage} dari {lastPage}
-              </span>
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-lg shadow-md">
+                <span className="text-sm font-medium">
+                  Halaman {currentPage} dari {lastPage}
+                </span>
+              </div>
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === lastPage}
-                className="flex items-center gap-2 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium transition hover:bg-gray-100 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 border border-gray-200 dark:border-gray-700 shadow-sm"
               >
                 Selanjutnya
                 <ChevronRight size={16} />
@@ -160,22 +162,19 @@ export default function VtourScenePage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 sm:p-6 lg:p-8 text-gray-800 dark:text-gray-200">
         <main className="mx-auto max-w-7xl">
           {/* Header */}
-          <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-700 pb-6 sm:flex-row sm:items-center">
+          <div className="mb-8 flex items-center justify-between bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
                 Manajemen Virtual Tour
               </h1>
-              <p className="mt-1 text-gray-500 dark:text-gray-400">
-                Kelola semua spot 360 untuk tur virtual Anda di sini.
-              </p>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">Kelola scene dan hotspot virtual tour Anda</p>
             </div>
-            {/* ✅ PERBAIKAN: Pastikan onClick memanggil setIsModalOpen(true) */}
             <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-6 py-3 text-sm font-medium text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <Plus size={18} />
               Tambah Scene
@@ -189,10 +188,10 @@ export default function VtourScenePage() {
         </main>
       </div>
 
-      {/* ✅ PERBAIKAN: Pastikan prop isOpen dan onClose terpasang dengan benar */}
+      {/* Modal untuk membuat scene baru */}
       <CreateSceneModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleSuccess}
       />
     </>
