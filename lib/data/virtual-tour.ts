@@ -9,9 +9,8 @@ const apiBase = '/api/vtour';
 
 // --- FUNGSI UNTUK SCENES ---
 export async function getScenesPaginated(page = 1) {
-  // Gunakan Laravel API URL untuk mengakses backend
-  const laravelApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const res = await fetch(`${laravelApiUrl}/api/vtour/scenes?page=${page}`);
+  // Fungsi ini kemungkinan dipanggil dari client, jadi kita gunakan path relatif
+  const res = await fetch(`${apiBase}/scenes?page=${page}`);
   if (!res.ok) throw new Error(`Gagal memuat scene`);
   return res.json();
 }

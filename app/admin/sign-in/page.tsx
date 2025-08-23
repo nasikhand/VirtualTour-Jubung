@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
+import { authAPI } from "@/lib/api-client";
 
 export default function AdminSignInPage() {
   const router = useRouter();
@@ -67,18 +68,21 @@ export default function AdminSignInPage() {
         return;
       }
 
-      // Simulasi login - nanti bisa diganti dengan API call ke web utama
-      if (formData.username === "admin" && formData.password === "admin123") {
-        // Simpan token ke localStorage
-        localStorage.setItem("adminToken", "dummy-admin-token");
+      // Login menggunakan API backend
+      try {
+        const response = await authAPI.login(formData.username, formData.password);
+        
+        // Simpan token dari response
+        localStorage.setItem("adminToken", response.access_token);
         toast.success("Login berhasil!");
         
         // Redirect ke admin dashboard
         setTimeout(() => {
-          router.push("/admin");
+          window.location.href = "/admin";
         }, 1000);
-      } else {
-        toast.error("Username atau password salah!");
+      } catch (apiError: any) {
+        const errorMessage = apiError.response?.data?.message || "Username atau password salah!";
+        toast.error(errorMessage);
         generateCaptcha(); // Generate captcha baru setelah login gagal
         setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
       }

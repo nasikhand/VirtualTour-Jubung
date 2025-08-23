@@ -1,6 +1,45 @@
 import { review } from "@/types";
+import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000/api';
+
+// Create axios instance for authenticated requests
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  withCredentials: false,
+});
+
+// Request interceptor untuk menambahkan token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('adminToken');
+    if (token && token !== 'dummy-admin-token') {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor untuk handle unauthorized
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('adminToken');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/admin/sign-in';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Ambil review dari backend.
@@ -87,3 +126,54 @@ export async function updateReviewStatus(id: number, status: 'approved' | 'rejec
     throw error;
   }
 }
+
+// Auth API functions
+export const authAPI = {
+  login: async (username: string, password: string) => {
+    const response = await apiClient.post('/login/admin', {
+      username,
+      password
+    });
+    return response.data;
+  },
+  
+  getProfile: async () => {
+    const response = await apiClient.get('/user');
+    return response.data;
+  },
+  
+  updateProfile: async (data: any) => {
+    const response = await apiClient.put('/admin/update-profile', data);
+    return response.data;
+  },
+  
+  validateToken: async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        return { valid: false };
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/user`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        return { valid: true, user: userData };
+      } else {
+        return { valid: false };
+      }
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return { valid: false };
+    }
+  }
+};
+
+export { apiClient };

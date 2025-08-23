@@ -25,51 +25,68 @@ export default function DraggableHotspot({
 
   const convertToCoords = (xPercent: number, yPercent: number) => {
     try {
-      // Gunakan Pannellum viewer untuk konversi yang akurat
+      // Gunakan Pannellum viewer untuk konversi yang akurat (sama seperti click mode)
       const viewer = viewerRef.current;
       console.log('DraggableHotspot: Converting coordinates', { xPercent, yPercent, viewer });
       
-      if (viewer && typeof viewer.screenToCoords === 'function') {
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        if (containerRect) {
-          // Konversi persentase ke pixel coordinates
-          const pixelX = (xPercent / 100) * containerRect.width;
-          const pixelY = (yPercent / 100) * containerRect.height;
-          
-          console.log('DraggableHotspot: Pixel coordinates', { pixelX, pixelY, containerRect });
-          
-          // Gunakan Pannellum's screenToCoords untuk konversi akurat
-          const coords = viewer.screenToCoords([pixelX, pixelY]);
-          console.log('DraggableHotspot: Pannellum screenToCoords result', coords);
+      if (viewer && containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        // Konversi persentase ke pixel coordinates relatif terhadap container
+        const pixelX = (xPercent / 100) * containerRect.width;
+        const pixelY = (yPercent / 100) * containerRect.height;
+        
+        console.log('DraggableHotspot: Pixel coordinates', { pixelX, pixelY, containerRect });
+        
+        // Buat mock mouse event untuk menggunakan mouseEventToCoords seperti click mode
+        const mockEvent = {
+          clientX: containerRect.left + pixelX,
+          clientY: containerRect.top + pixelY,
+          target: containerRef.current
+        } as MouseEvent;
+        
+        // Gunakan mouseEventToCoords yang sama dengan click mode untuk konsistensi
+        if (typeof viewer.mouseEventToCoords === 'function') {
+          const coords = viewer.mouseEventToCoords(mockEvent);
+          console.log('DraggableHotspot: mouseEventToCoords result', coords);
           
           if (Array.isArray(coords) && coords.length >= 2) {
             const result = { pitch: coords[0], yaw: coords[1] };
-            console.log('DraggableHotspot: Final coordinates from Pannellum', result);
+            console.log('DraggableHotspot: Final coordinates from mouseEventToCoords', result);
+            return result;
+          }
+        }
+        
+        // Fallback ke screenToCoords jika mouseEventToCoords tidak tersedia
+        if (typeof viewer.screenToCoords === 'function') {
+          const coords = viewer.screenToCoords([pixelX, pixelY]);
+          console.log('DraggableHotspot: screenToCoords result', coords);
+          
+          if (Array.isArray(coords) && coords.length >= 2) {
+            const result = { pitch: coords[0], yaw: coords[1] };
+            console.log('DraggableHotspot: Final coordinates from screenToCoords', result);
             return result;
           }
         }
       }
       
-      // Fallback manual calculation yang lebih akurat
-      console.log('DraggableHotspot: Using improved fallback manual calculation');
+      // Fallback: konversi manual (hanya jika viewer tidak tersedia)
+      console.warn('DraggableHotspot: Using fallback coordinate conversion');
       
       // Konversi persentase ke normalized coordinates (-1 to 1)
       const xNormalized = (xPercent / 100) * 2 - 1; // 0-100% -> -1 to 1
       const yNormalized = 1 - (yPercent / 100) * 2; // 0-100% -> 1 to -1 (inverted Y)
       
-      // Konversi ke spherical coordinates
-      // Yaw: horizontal rotation (-180 to 180 degrees)
-      const yaw = xNormalized * 180; // -180 to 180
-      
-      // Pitch: vertical rotation (-90 to 90 degrees)
-      const pitch = yNormalized * 90; // -90 to 90
+      // Konversi langsung ke koordinat panorama
+      const yaw = xNormalized * 180; // Full range -180 to 180
+      const pitch = yNormalized * 90; // Full range -90 to 90
       
       const result = {
         yaw: Math.max(-180, Math.min(180, yaw)),
         pitch: Math.max(-90, Math.min(90, pitch))
       };
       
-      console.log('DraggableHotspot: Improved fallback calculation result', {
+      console.log('DraggableHotspot: Fallback coordinate calculation', {
         input: { xPercent, yPercent },
         normalized: { xNormalized, yNormalized },
         result
@@ -89,10 +106,16 @@ export default function DraggableHotspot({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
-    setDragStart({
-      x: e.clientX - (position.x / 100) * (containerRef.current?.clientWidth || 0),
-      y: e.clientY - (position.y / 100) * (containerRef.current?.clientHeight || 0)
-    });
+    // Simpan offset mouse relatif terhadap hotspot untuk drag yang smooth
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const hotspotCenterX = rect.left + (position.x / 100) * rect.width;
+      const hotspotCenterY = rect.top + (position.y / 100) * rect.height;
+      setDragStart({
+        x: e.clientX - hotspotCenterX,
+        y: e.clientY - hotspotCenterY
+      });
+    }
     e.preventDefault();
   };
 
@@ -102,8 +125,13 @@ export default function DraggableHotspot({
     const container = containerRef.current;
     const rect = container.getBoundingClientRect();
     
-    const newX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const newY = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    // Hitung posisi baru dengan mempertimbangkan offset drag
+    const newPixelX = e.clientX - dragStart.x - rect.left;
+    const newPixelY = e.clientY - dragStart.y - rect.top;
+    
+    // Konversi ke persentase dan batasi dalam range 0-100%
+    const newX = Math.max(0, Math.min(100, (newPixelX / rect.width) * 100));
+    const newY = Math.max(0, Math.min(100, (newPixelY / rect.height) * 100));
     
     setPosition({ x: newX, y: newY });
     
@@ -141,45 +169,35 @@ export default function DraggableHotspot({
       return;
     }
     
-    const coords = convertToCoords(position.x, position.y);
-    console.log('DraggableHotspot: Drag confirmed:', { position, coords });
+    // Pastikan menggunakan posisi terkini dari state
+    const finalCoords = convertToCoords(position.x, position.y);
+    console.log('DraggableHotspot: Final confirmation:', { 
+      currentPosition: position, 
+      finalCoords,
+      initialPosition 
+    });
     
     // Validasi koordinat - pastikan koordinat dalam range yang valid
     const isValidCoords = (
-      coords.yaw >= -180 && coords.yaw <= 180 &&
-      coords.pitch >= -90 && coords.pitch <= 90
+      finalCoords.yaw >= -180 && finalCoords.yaw <= 180 &&
+      finalCoords.pitch >= -90 && finalCoords.pitch <= 90 &&
+      !isNaN(finalCoords.yaw) && !isNaN(finalCoords.pitch)
     );
     
     if (!isValidCoords) {
-      console.warn('DraggableHotspot: Invalid coordinate range detected, retrying conversion');
-      // Retry beberapa kali dengan delay untuk memastikan viewer sudah ready
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      const retryConversion = () => {
-        retryCount++;
-        const retryCoords = convertToCoords(position.x, position.y);
-        console.log(`DraggableHotspot: Retry ${retryCount} coordinates:`, retryCoords);
-        
-        const isRetryValid = (
-          retryCoords.yaw >= -180 && retryCoords.yaw <= 180 &&
-          retryCoords.pitch >= -90 && retryCoords.pitch <= 90
-        );
-        
-        if (isRetryValid || retryCount >= maxRetries) {
-          // Jika koordinat valid atau sudah mencoba maksimal, lanjutkan
-          onPositionChange(retryCoords);
-          onConfirm();
-        } else {
-          // Retry lagi dengan delay lebih lama
-          setTimeout(retryConversion, 200 * retryCount);
-        }
+      console.warn('DraggableHotspot: Invalid coordinate range detected, using fallback');
+      // Gunakan fallback calculation yang lebih sederhana
+      const fallbackCoords = {
+        yaw: ((position.x / 100) * 2 - 1) * 180,
+        pitch: (1 - (position.y / 100) * 2) * 90
       };
-      
-      setTimeout(retryConversion, 100);
+      console.log('DraggableHotspot: Using fallback coordinates:', fallbackCoords);
+      onPositionChange(fallbackCoords);
+      onConfirm();
     } else {
-      // Koordinat valid, langsung konfirmasi
-      onPositionChange(coords);
+      // Koordinat valid, langsung konfirmasi dengan posisi final
+      console.log('DraggableHotspot: Confirming with valid coordinates:', finalCoords);
+      onPositionChange(finalCoords);
       onConfirm();
     }
   };

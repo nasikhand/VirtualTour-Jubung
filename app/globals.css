@@ -243,3 +243,46 @@
   background-repeat: no-repeat;
   background-position: center;
 }
+
+/* Custom Scrollbar Styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-blue-600 {
+  scrollbar-color: #2563eb #1e40af;
+}
+
+.scrollbar-track-blue-800 {
+  scrollbar-color: #1e40af #1e3a8a;
+}
+
+/* Webkit Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e3a8a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Responsive Sidebar */
+@media (max-width: 1024px) {
+  .sidebar-mobile-hidden {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-mobile-visible {
+    transform: translateX(0);
+  }
+}

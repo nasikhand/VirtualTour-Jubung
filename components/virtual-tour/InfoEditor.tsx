@@ -100,7 +100,7 @@ export default function InfoEditor({ isOpen, hotspot, onSave, onClose, onDelete,
         </div>
       </div>
       <div className="flex-shrink-0 flex justify-between items-center p-5 mt-auto border-t">
-        {onDelete && hotspot?.id && typeof hotspot.id === 'number' ? (<button onClick={onDelete} className="p-2 text-red-600 hover:bg-red-50 rounded-md"><Trash2 size={18} /></button>) : (<div />)}
+        {onDelete && hotspot?.id ? (<button onClick={onDelete} className="p-2 text-red-600 hover:bg-red-50 rounded-md"><Trash2 size={18} /></button>) : (<div />)}
         <div className="flex-grow flex justify-end space-x-2">
           <button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-300">CLOSE</button>
           <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>

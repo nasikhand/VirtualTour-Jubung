@@ -100,12 +100,13 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
     
     // Validasi koordinat - pastikan koordinat dalam range yang valid
     const isValidCoords = (
-      tempHotspotCoords.yaw >= -180 && tempHotspotCoords.yaw <= 180 &&
-      tempHotspotCoords.pitch >= -90 && tempHotspotCoords.pitch <= 90
+      !isNaN(tempHotspotCoords.pitch) && !isNaN(tempHotspotCoords.yaw) &&
+      tempHotspotCoords.pitch >= -90 && tempHotspotCoords.pitch <= 90 &&
+      tempHotspotCoords.yaw >= -180 && tempHotspotCoords.yaw <= 180
     );
     
     if (!isValidCoords) {
-      console.warn('PlacementEditor: Invalid coordinate range detected:', tempHotspotCoords);
+      console.warn('PlacementEditor: Invalid coordinates detected:', tempHotspotCoords);
       toast.error('Posisi hotspot tidak valid, silakan coba lagi');
       return;
     }

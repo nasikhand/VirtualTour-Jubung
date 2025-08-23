@@ -21,44 +21,51 @@ export default function SidebarAdmin() {
 
 
   return (
-    <aside className="h-screen w-64 bg-white border-r shadow-sm flex flex-col">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl flex flex-col overflow-hidden z-40 transform transition-transform duration-300 ease-in-out">
       {/* Header */}
-      <div className="p-4 border-b">
-        <h1 className="text-xl font-bold text-blue-700">Virtual Tour</h1>
-        <p className="text-sm text-gray-500">Admin Panel</p>
+      <div className="p-6 border-b border-blue-700">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+            <span className="text-xl font-bold">VT</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">Virtual Tour</h1>
+            <p className="text-sm text-blue-200">Admin Panel</p>
+          </div>
+        </div>
       </div>
       
       {/* Navigation */}
-      <nav className="px-2 flex-1 py-4">
-        <ul className="space-y-1">
+      <nav className="px-4 flex-1 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-600 scrollbar-track-blue-800">
+        <ul className="space-y-2">
           {sidebarMenuAdmin.map((item) => (
             <li key={item.label}>
               {item.children ? (
                 <>
                   <button
                     onClick={() => setOpen(open === item.label ? null : item.label)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-gray-700 rounded hover:bg-gray-100"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-white rounded-lg hover:bg-white/10 transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      {item.icon && <item.icon size={18} />}
-                      {item.label}
+                      {item.icon && <item.icon size={20} className="text-blue-200" />}
+                      <span>{item.label}</span>
                     </div>
                     <ChevronDown
-                      className={`h-4 w-4 transform transition ${
+                      className={`h-4 w-4 transform transition-transform duration-200 text-blue-200 ${
                         open === item.label ? "rotate-180" : ""
                       }`}
                     />
                   </button>
                   {open === item.label && (
-                    <ul className="ml-4 mt-1 space-y-1">
+                    <ul className="ml-6 mt-2 space-y-1 border-l border-blue-700 pl-4">
                       {item.children.map((child) => (
                         <li key={child.label}>
                           <Link
                             href={child.href}
-                            className={`flex items-center gap-3 rounded px-3 py-2 text-xs font-medium ${
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                               pathname.startsWith(child.href)
-                                ? "bg-blue-100 text-blue-700"
-                                : "text-gray-600 hover:bg-gray-50"
+                                ? "bg-white/20 text-white shadow-sm"
+                                : "text-blue-200 hover:bg-white/10 hover:text-white"
                             }`}
                           >
                             {child.icon && <child.icon size={16} />}
@@ -72,13 +79,13 @@ export default function SidebarAdmin() {
               ) : (
                 <Link
                   href={item.href}
-                  className={`flex w-full items-center gap-3 rounded px-3 py-2 text-sm font-medium ${
+                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
                     pathname.startsWith(item.href)
-                      ? "bg-blue-100 text-blue-700"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-white/20 text-white shadow-sm"
+                      : "text-blue-200 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  {item.icon && <item.icon size={18} />}
+                  {item.icon && <item.icon size={20} />}
                   {item.label}
                 </Link>
               )}
@@ -88,22 +95,22 @@ export default function SidebarAdmin() {
       </nav>
 
       {/* Footer with User Info and Logout */}
-      <div className="border-t p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <User size={16} className="text-blue-600" />
+      <div className="border-t border-blue-700 p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <User size={18} className="text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-700">Admin</p>
-            <p className="text-xs text-gray-500">Virtual Tour Manager</p>
+            <p className="text-sm font-medium text-white">Admin</p>
+            <p className="text-xs text-blue-200">Virtual Tour Manager</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-200 hover:bg-red-500/20 hover:text-red-100 rounded-lg transition-all duration-200 border border-red-400/30 hover:border-red-300"
         >
           <LogOut size={16} />
-          Logout
+          <span>Logout</span>
         </button>
       </div>
     </aside>
