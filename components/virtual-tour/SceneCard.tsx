@@ -136,20 +136,20 @@ export default function SceneCard({ scene, onDelete, href, viewMode = 'grid', is
         )}
       </div>
       
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-shrink-0">
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             router.push(`/virtual-tour?scene=${scene.id}`);
           }}
-          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+          className="p-3 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-200 hover:scale-110 shadow-sm"
           title="Preview Scene"
         >
-          <Eye size={16} />
+          <Eye size={18} />
         </button>
-        <div className="p-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg">
-          <Edit size={16} />
+        <div className="p-3 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl shadow-sm">
+          <Edit size={18} />
         </div>
         {onDelete && (
           <button 
@@ -158,10 +158,10 @@ export default function SceneCard({ scene, onDelete, href, viewMode = 'grid', is
               e.stopPropagation();
               onDelete(scene);
             }} 
-            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+            className="p-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all duration-200 hover:scale-110 shadow-sm"
             title="Hapus Scene"
           >
-            <Trash2 size={16} />
+            <Trash2 size={18} />
           </button>
         )}
       </div>

@@ -74,7 +74,7 @@ export default function VtourScenePage() {
 
   const handleSuccess = () => {
     loadScenes(1);
-    setIsCreateModalOpen(false);
+    setIsModalOpen(false);
   }
 
   const handleDeleteClick = (scene: Scene) => {

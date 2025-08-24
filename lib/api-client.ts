@@ -1,23 +1,18 @@
-import { review } from "@/types";
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
-
-// Create axios instance for authenticated requests
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: process.env.NEXT_PUBLIC_VTOUR_API_URL || 'http://localhost:8000/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: false,
+  timeout: 10000,
 });
 
-// Request interceptor untuk menambahkan token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
-    if (token && token !== 'dummy-admin-token') {
+    const token = localStorage.getItem('vtourAdminToken');
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -27,12 +22,11 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor untuk handle unauthorized
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
+      localStorage.removeItem('vtourAdminToken');
       if (typeof window !== 'undefined') {
         window.location.href = '/admin/sign-in';
       }
@@ -41,139 +35,119 @@ apiClient.interceptors.response.use(
   }
 );
 
-/**
- * Ambil review dari backend.
- * - Jika tanpa parameter: hanya review `approved` (untuk user)
- * - Jika `isAdmin: true`: ambil semua review (admin), bisa difilter pakai status
- */
-export async function fetchReviews(
-  options?: { isAdmin?: boolean; status?: 'pending' | 'approved' | 'rejected' }
-): Promise<review[]> {
-  try {
-    let url = '';
-
-    if (options?.isAdmin) {
-      // Untuk halaman admin
-      const query = options.status ? `?status=${options.status}` : '';
-      url = `${API_BASE_URL}/admin/review${query}`;
-    } else {
-      // Untuk user (hanya approved)
-      url = `${API_BASE_URL}/review/approved`;
-    }
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gagal mengambil review: ${response.status} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    return result.data ?? result; // kalau pakai pagination, ambil `data`
-  } catch (error) {
-    console.error("Kesalahan saat mengambil review:", error);
-    throw error;
-  }
-}
-
-/**
- * Kirim review baru dari user
- */
-export async function addReview(newReview: Omit<review, 'id' | 'icon'>): Promise<review> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/review`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newReview),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gagal menambahkan review: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Kesalahan saat menambahkan review:", error);
-    throw error;
-  }
-}
-
-/**
- * Ubah status review (ACC atau Tolak)
- */
-export async function updateReviewStatus(id: number, status: 'approved' | 'rejected'): Promise<review> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/admin/review/${id}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gagal mengupdate status: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Kesalahan saat update status review:", error);
-    throw error;
-  }
-}
-
-// Auth API functions
 export const authAPI = {
   login: async (username: string, password: string) => {
-    const response = await apiClient.post('/login/admin', {
+    const response = await axios.post('/api/login/vtour-admin', {
       username,
-      password
+      password,
     });
     return response.data;
   },
-  
+
+  logout: async () => {
+    const response = await apiClient.post('/admin/logout');
+    return response.data;
+  },
+
   getProfile: async () => {
-    const response = await apiClient.get('/user');
+    const response = await apiClient.get('/admin/profile');
     return response.data;
   },
-  
-  updateProfile: async (data: any) => {
-    const response = await apiClient.put('/admin/update-profile', data);
+};
+
+export const vtourAPI = {
+  getScenes: async (page = 1) => {
+    const response = await apiClient.get(`/vtour/scenes?page=${page}`);
     return response.data;
   },
-  
-  validateToken: async () => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        return { valid: false };
-      }
-      
-      const response = await fetch(`${API_BASE_URL}/user`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        return { valid: true, user: userData };
-      } else {
-        return { valid: false };
-      }
-    } catch (error) {
-      console.error('Token validation error:', error);
-      return { valid: false };
-    }
-  }
+
+  getScene: async (id: string | number) => {
+    const response = await apiClient.get(`/vtour/scenes/${id}`);
+    return response.data;
+  },
+
+  createScene: async (formData: FormData) => {
+    const response = await apiClient.post('/vtour/scenes', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  updateScene: async (id: string | number, data: any) => {
+    const response = await apiClient.put(`/vtour/scenes/${id}`, data);
+    return response.data;
+  },
+
+  deleteScene: async (id: string | number) => {
+    const response = await apiClient.delete(`/vtour/scenes/${id}`);
+    return response.data;
+  },
+
+  getMenus: async () => {
+    const response = await apiClient.get('/vtour/menus');
+    return response.data;
+  },
+
+  createMenu: async (data: any) => {
+    const response = await apiClient.post('/vtour/menus', data);
+    return response.data;
+  },
+
+  updateMenu: async (id: string | number, data: any) => {
+    const response = await apiClient.put(`/vtour/menus/${id}`, data);
+    return response.data;
+  },
+
+  deleteMenu: async (id: string | number) => {
+    const response = await apiClient.delete(`/vtour/menus/${id}`);
+    return response.data;
+  },
+
+  updateMenuOrder: async (orders: { id: number; order: number }[]) => {
+    const response = await apiClient.put('/vtour/menus/update-order', { orders });
+    return response.data;
+  },
+
+  getHotspots: async (sceneId: string | number) => {
+    const response = await apiClient.get(`/vtour/scenes/${sceneId}/hotspots`);
+    return response.data;
+  },
+
+  createHotspot: async (data: any) => {
+    const response = await apiClient.post('/vtour/hotspots', data);
+    return response.data;
+  },
+
+  updateHotspot: async (id: string | number, data: any) => {
+    const response = await apiClient.put(`/vtour/hotspots/${id}`, data);
+    return response.data;
+  },
+
+  deleteHotspot: async (id: string | number) => {
+    const response = await apiClient.delete(`/vtour/hotspots/${id}`);
+    return response.data;
+  },
+
+  getSettings: async () => {
+    const response = await apiClient.get('/vtour/settings');
+    return response.data;
+  },
+
+  updateSettings: async (data: any) => {
+    const response = await apiClient.put('/vtour/settings', data);
+    return response.data;
+  },
+
+  uploadLogo: async (formData: FormData) => {
+    const response = await apiClient.post('/vtour/settings/logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export { apiClient };

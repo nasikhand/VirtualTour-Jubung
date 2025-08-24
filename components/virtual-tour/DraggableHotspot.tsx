@@ -1,238 +1,228 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { MapPin, Move } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { MapPin, Check, X } from 'lucide-react';
+import { coordinateUtils } from '@/lib/utils';
 
 interface DraggableHotspotProps {
   onPositionChange: (coords: { pitch: number; yaw: number }) => void;
   onConfirm: () => void;
-  containerRef: React.RefObject<HTMLDivElement>;
-  viewerRef: React.RefObject<any>;
-  initialPosition?: { x: number; y: number }; // Posisi awal dalam persentase
+  onCancel: () => void;
+  initialPosition?: { x: number; y: number };
+  currentViewerPosition?: { pitch: number; yaw: number };
 }
 
 export default function DraggableHotspot({ 
   onPositionChange, 
   onConfirm, 
-  containerRef, 
-  viewerRef,
-  initialPosition = { x: 50, y: 50 }
+  onCancel,
+  initialPosition = { x: 50, y: 50 },
+  currentViewerPosition
 }: DraggableHotspotProps) {
-  const [position, setPosition] = useState(initialPosition); // Percentage position
+  const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const hotspotRef = useRef<HTMLDivElement>(null);
 
-  const convertToCoords = (xPercent: number, yPercent: number) => {
-    try {
-      // Gunakan Pannellum viewer untuk konversi yang akurat (sama seperti click mode)
-      const viewer = viewerRef.current;
-      console.log('DraggableHotspot: Converting coordinates', { xPercent, yPercent, viewer });
-      
-      if (viewer && containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        
-        // Konversi persentase ke pixel coordinates relatif terhadap container
-        const pixelX = (xPercent / 100) * containerRect.width;
-        const pixelY = (yPercent / 100) * containerRect.height;
-        
-        console.log('DraggableHotspot: Pixel coordinates', { pixelX, pixelY, containerRect });
-        
-        // Buat mock mouse event untuk menggunakan mouseEventToCoords seperti click mode
-        const mockEvent = {
-          clientX: containerRect.left + pixelX,
-          clientY: containerRect.top + pixelY,
-          target: containerRef.current
-        } as MouseEvent;
-        
-        // Gunakan mouseEventToCoords yang sama dengan click mode untuk konsistensi
-        if (typeof viewer.mouseEventToCoords === 'function') {
-          const coords = viewer.mouseEventToCoords(mockEvent);
-          console.log('DraggableHotspot: mouseEventToCoords result', coords);
-          
-          if (Array.isArray(coords) && coords.length >= 2) {
-            const result = { pitch: coords[0], yaw: coords[1] };
-            console.log('DraggableHotspot: Final coordinates from mouseEventToCoords', result);
-            return result;
-          }
-        }
-        
-        // Fallback ke screenToCoords jika mouseEventToCoords tidak tersedia
-        if (typeof viewer.screenToCoords === 'function') {
-          const coords = viewer.screenToCoords([pixelX, pixelY]);
-          console.log('DraggableHotspot: screenToCoords result', coords);
-          
-          if (Array.isArray(coords) && coords.length >= 2) {
-            const result = { pitch: coords[0], yaw: coords[1] };
-            console.log('DraggableHotspot: Final coordinates from screenToCoords', result);
-            return result;
-          }
-        }
-      }
-      
-      // Fallback: konversi manual (hanya jika viewer tidak tersedia)
-      console.warn('DraggableHotspot: Using fallback coordinate conversion');
-      
-      // Konversi persentase ke normalized coordinates (-1 to 1)
-      const xNormalized = (xPercent / 100) * 2 - 1; // 0-100% -> -1 to 1
-      const yNormalized = 1 - (yPercent / 100) * 2; // 0-100% -> 1 to -1 (inverted Y)
-      
-      // Konversi langsung ke koordinat panorama
-      const yaw = xNormalized * 180; // Full range -180 to 180
-      const pitch = yNormalized * 90; // Full range -90 to 90
-      
-      const result = {
-        yaw: Math.max(-180, Math.min(180, yaw)),
-        pitch: Math.max(-90, Math.min(90, pitch))
-      };
-      
-      console.log('DraggableHotspot: Fallback coordinate calculation', {
-        input: { xPercent, yPercent },
-        normalized: { xNormalized, yNormalized },
-        result
-      });
-      return result;
-    } catch (error) {
-      console.error('DraggableHotspot: Error converting coordinates:', error);
-      // Return coordinates based on position instead of always (0,0)
-      const xNormalized = (xPercent / 100) * 2 - 1;
-      const yNormalized = 1 - (yPercent / 100) * 2;
-      return {
-        yaw: Math.max(-180, Math.min(180, xNormalized * 180)),
-        pitch: Math.max(-90, Math.min(90, yNormalized * 90))
-      };
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    // Simpan offset mouse relatif terhadap hotspot untuk drag yang smooth
-    if (containerRef.current) {
+  // Initialize position based on current viewer position if available
+  useEffect(() => {
+    if (currentViewerPosition && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const hotspotCenterX = rect.left + (position.x / 100) * rect.width;
-      const hotspotCenterY = rect.top + (position.y / 100) * rect.height;
-      setDragStart({
-        x: e.clientX - hotspotCenterX,
-        y: e.clientY - hotspotCenterY
-      });
+      const screenCoords = coordinateUtils.sphereToScreen(
+        currentViewerPosition.pitch,
+        currentViewerPosition.yaw,
+        rect.width,
+        rect.height
+      );
+      
+      const x = (screenCoords.x / rect.width) * 100;
+      const y = (screenCoords.y / rect.height) * 100;
+      
+      setPosition({ x, y });
     }
+  }, [currentViewerPosition]);
+
+  // Simplified readiness check - only require container
+  useEffect(() => {
+    const checkReady = () => {
+      if (containerRef.current) {
+        setIsReady(true);
+        setError(null);
+      } else {
+        setIsReady(false);
+        setError("Container tidak tersedia");
+      }
+    };
+
+    checkReady();
+    const interval = setInterval(checkReady, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const convertToSphereCoords = useCallback((x: number, y: number) => {
+    try {
+      if (!containerRef.current) {
+        throw new Error("Container tidak tersedia");
+      }
+
+      const rect = containerRef.current.getBoundingClientRect();
+      
+      // Convert relative position to sphere coordinates
+      const coords = coordinateUtils.screenToSphere(x, y, rect.width, rect.height);
+      
+      if (!coordinateUtils.isValidSphereCoords(coords.pitch, coords.yaw)) {
+        throw new Error("Koordinat tidak valid");
+      }
+
+      return coordinateUtils.normalizeSphereCoords(coords.pitch, coords.yaw);
+    } catch (err) {
+      console.error('Error converting coordinates:', err);
+      setError(err instanceof Error ? err.message : "Error konversi koordinat");
+      return null;
+    }
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!isReady) return;
+    
     e.preventDefault();
-  };
+    e.stopPropagation();
+    setIsDragging(true);
+    setError(null);
+  }, [isReady]);
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !containerRef.current) return;
-    
-    const container = containerRef.current;
-    const rect = container.getBoundingClientRect();
-    
-    // Hitung posisi baru dengan mempertimbangkan offset drag
-    const newPixelX = e.clientX - dragStart.x - rect.left;
-    const newPixelY = e.clientY - dragStart.y - rect.top;
-    
-    // Konversi ke persentase dan batasi dalam range 0-100%
-    const newX = Math.max(0, Math.min(100, (newPixelX / rect.width) * 100));
-    const newY = Math.max(0, Math.min(100, (newPixelY / rect.height) * 100));
-    
-    setPosition({ x: newX, y: newY });
-    
-    // Update coordinates in real-time
-    const coords = convertToCoords(newX, newY);
-    onPositionChange(coords);
-  };
 
-  const handleMouseUp = () => {
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Clamp values to container bounds
+    const clampedX = Math.max(0, Math.min(100, x));
+    const clampedY = Math.max(0, Math.min(100, y));
+
+    setPosition({ x: clampedX, y: clampedY });
+
+    const sphereCoords = convertToSphereCoords(e.clientX - rect.left, e.clientY - rect.top);
+    if (sphereCoords) {
+      onPositionChange(sphereCoords);
+    }
+  }, [isDragging, convertToSphereCoords, onPositionChange]);
+
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    if (!isReady) {
+      setError("Viewer belum siap");
+      return;
+    }
+
+    const sphereCoords = convertToSphereCoords(
+      (position.x / 100) * (containerRef.current?.offsetWidth || 0),
+      (position.y / 100) * (containerRef.current?.offsetHeight || 0)
+    );
+
+    if (sphereCoords) {
+      onConfirm();
+    } else {
+      setError("Koordinat tidak valid. Pastikan viewer sudah dimuat sepenuhnya.");
+    }
+  }, [isReady, position, convertToSphereCoords, onConfirm]);
 
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // Update posisi dan koordinat saat initialPosition berubah
-  useEffect(() => {
-    setPosition(initialPosition);
-    const coords = convertToCoords(initialPosition.x, initialPosition.y);
-    onPositionChange(coords);
-  }, [initialPosition.x, initialPosition.y]);
-
-  const handleConfirm = () => {
-    if (!containerRef.current) {
-      console.error('DraggableHotspot: Container ref not available for confirmation');
-      return;
-    }
-    
-    // Pastikan menggunakan posisi terkini dari state
-    const finalCoords = convertToCoords(position.x, position.y);
-    console.log('DraggableHotspot: Final confirmation:', { 
-      currentPosition: position, 
-      finalCoords,
-      initialPosition 
-    });
-    
-    // Validasi koordinat - pastikan koordinat dalam range yang valid
-    const isValidCoords = (
-      finalCoords.yaw >= -180 && finalCoords.yaw <= 180 &&
-      finalCoords.pitch >= -90 && finalCoords.pitch <= 90 &&
-      !isNaN(finalCoords.yaw) && !isNaN(finalCoords.pitch)
-    );
-    
-    if (!isValidCoords) {
-      console.warn('DraggableHotspot: Invalid coordinate range detected, using fallback');
-      // Gunakan fallback calculation yang lebih sederhana
-      const fallbackCoords = {
-        yaw: ((position.x / 100) * 2 - 1) * 180,
-        pitch: (1 - (position.y / 100) * 2) * 90
-      };
-      console.log('DraggableHotspot: Using fallback coordinates:', fallbackCoords);
-      onPositionChange(fallbackCoords);
-      onConfirm();
-    } else {
-      // Koordinat valid, langsung konfirmasi dengan posisi final
-      console.log('DraggableHotspot: Confirming with valid coordinates:', finalCoords);
-      onPositionChange(finalCoords);
-      onConfirm();
-    }
-  };
-
+  // Always render, show loading state when not ready
   return (
-    <div
-      ref={hotspotRef}
-      className={`absolute z-30 transform -translate-x-1/2 -translate-y-1/2 cursor-move ${
-        isDragging ? 'scale-110' : 'hover:scale-105'
-      } transition-transform`}
-      style={{
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-      }}
-      onMouseDown={handleMouseDown}
+    <div 
+      ref={containerRef}
+      className="absolute inset-0 z-50 cursor-crosshair"
+      style={{ pointerEvents: isReady ? 'auto' : 'none' }}
     >
-      <div className="relative">
+      {/* Loading/Error State */}
+      {!isReady && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+            <p className="text-gray-700">Menunggu viewer...</p>
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Draggable Hotspot */}
+      <div
+        ref={hotspotRef}
+        className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ${
+          isDragging ? 'scale-110 z-60' : 'hover:scale-105'
+        } ${isReady ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed'}`}
+        style={{
+          left: `${position.x}%`,
+          top: `${position.y}%`,
+        }}
+        onMouseDown={handleMouseDown}
+      >
         {/* Hotspot Icon */}
-        <div className="bg-red-500 text-white p-3 rounded-full shadow-lg border-2 border-white">
-          <MapPin size={24} />
+        <div className="relative">
+          <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+            <MapPin size={16} className="text-white" />
+          </div>
+          
+          {/* Crosshair Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-6 h-6 border border-white rounded-full opacity-50"></div>
+          </div>
         </div>
-        
-        {/* Drag Indicator */}
-        <div className="absolute -top-2 -right-2 bg-blue-500 text-white p-1 rounded-full">
-          <Move size={12} />
+
+        {/* Position Indicator */}
+        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+          {Math.round(position.x)}, {Math.round(position.y)}
         </div>
-        
-        {/* Confirm Button */}
+      </div>
+
+      {/* Control Buttons */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
         <button
           onClick={handleConfirm}
-          className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 transition-colors whitespace-nowrap"
+          disabled={!isReady}
+          className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:cursor-not-allowed"
         >
+          <Check size={16} />
           Konfirmasi Posisi
         </button>
+        <button
+          onClick={onCancel}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        >
+          <X size={16} />
+          Batal
+        </button>
       </div>
+
+      {/* Instructions */}
+      <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg text-sm">
+        + Gerakkan hotspot ke posisi yang diinginkan, lalu klik 'Konfirmasi Posisi'
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg text-sm max-w-md text-center">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

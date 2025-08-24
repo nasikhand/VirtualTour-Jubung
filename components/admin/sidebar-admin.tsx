@@ -13,7 +13,7 @@ export default function SidebarAdmin() {
   const [open, setOpen] = useState<string | null>(null);
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
+    localStorage.removeItem("vtourAdminToken");
     toast.success("Berhasil logout");
     router.push("/admin/sign-in");
   };

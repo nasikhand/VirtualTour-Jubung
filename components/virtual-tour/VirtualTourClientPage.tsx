@@ -47,6 +47,11 @@ export default function VirtualTourClientPage({
     window.dispatchEvent(new CustomEvent('resetView'));
   };
 
+  const handleLogoClick = () => {
+    // Redirect ke halaman web utama
+    window.open('http://localhost:3000', '_blank');
+  };
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -80,33 +85,41 @@ export default function VirtualTourClientPage({
           </div>
         )}
 
-        {/* Logo */}
+        {/* Logo - Made bigger and clickable */}
         {logoUrl && (
-          <div className="absolute top-4 left-4 z-30 transition-all duration-300 hover:scale-105">
-            <img src={logoUrl} alt="Logo" className="h-12 md:h-16 w-auto drop-shadow-lg" />
+          <div className="absolute top-6 left-6 z-30 transition-all duration-300 hover:scale-110 cursor-pointer group">
+            <div 
+              onClick={handleLogoClick}
+              className="relative"
+              title="Klik untuk kembali ke website utama"
+            >
+              <img 
+                src={logoUrl} 
+                alt="Logo Kebun Jubung" 
+                className="h-16 md:h-20 lg:h-24 w-auto drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl" 
+              />
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-white/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {/* Click hint */}
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                Klik untuk website utama
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Top Controls */}
-        <div className={`absolute top-4 right-4 z-30 flex items-center gap-2 transition-all duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          {/* Fullscreen Toggle */}
-          <button
-            onClick={toggleFullscreen}
-            className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
-            title={isFullscreen ? 'Keluar Fullscreen' : 'Fullscreen'}
-          >
-            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-          </button>
+        {/* Controls Toggle - Moved to top-left to avoid conflicts */}
+        <button
+          onClick={() => setShowControls(!showControls)}
+          className="absolute top-6 left-6 z-40 bg-gray-800/80 hover:bg-gray-800 text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+          style={{ transform: logoUrl ? 'translateX(120px)' : 'translateX(0)' }}
+          title={showControls ? 'Sembunyikan Kontrol' : 'Tampilkan Kontrol'}
+        >
+          {showControls ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
 
-          {/* Reset View */}
-          <button
-            onClick={resetView}
-            className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
-            title="Reset Tampilan"
-          >
-            <RotateCcw size={20} />
-          </button>
-
+        {/* Top Controls - Moved to top-right with proper spacing */}
+        <div className={`absolute top-6 right-6 z-30 flex items-center gap-2 transition-all duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           {/* Back to Map */}
           {mapMenu && activeScene.id !== mapMenu.scene_id && (
             <button
@@ -117,17 +130,25 @@ export default function VirtualTourClientPage({
               <span className="hidden md:inline font-medium">Kembali ke Peta</span>
             </button>
           )}
-        </div>
 
-        {/* Controls Toggle */}
-        <button
-          onClick={() => setShowControls(!showControls)}
-          className="absolute top-4 right-4 z-40 bg-gray-800/80 hover:bg-gray-800 text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
-          style={{ transform: showControls ? 'translateX(-200px)' : 'translateX(0)' }}
-          title={showControls ? 'Sembunyikan Kontrol' : 'Tampilkan Kontrol'}
-        >
-          {showControls ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
+          {/* Reset View */}
+          <button
+            onClick={resetView}
+            className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+            title="Reset Tampilan"
+          >
+            <RotateCcw size={20} />
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+            title={isFullscreen ? 'Keluar Fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+          </button>
+        </div>
 
         {/* Viewer Utama */}
         <PannellumViewer

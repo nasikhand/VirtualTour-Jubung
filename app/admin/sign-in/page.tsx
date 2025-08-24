@@ -1,194 +1,194 @@
+// app/admin/virtual-tour/sign-in/page.tsx (Contoh path)
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
-import { authAPI } from "@/lib/api-client";
+import toast from "react-hot-toast";
+import { useAuth } from "@/context/AuthContext";
+import { Eye, EyeOff, Lock, User, ArrowRight } from "lucide-react";
 
 export default function AdminSignInPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-    captcha: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [captchaQuestion, setCaptchaQuestion] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState(0);
-
-  // Generate captcha
-  const generateCaptcha = () => {
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-    const operators = ['+', '-', '*'];
-    const operator = operators[Math.floor(Math.random() * operators.length)];
-    
-    let answer;
-    switch (operator) {
-      case '+':
-        answer = num1 + num2;
-        break;
-      case '-':
-        answer = num1 - num2;
-        break;
-      case '*':
-        answer = num1 * num2;
-        break;
-      default:
-        answer = num1 + num2;
-    }
-    
-    setCaptchaQuestion(`${num1} ${operator} ${num2} = ?`);
-    setCaptchaAnswer(answer);
-  };
-
-  useEffect(() => {
-    generateCaptcha();
-  }, []);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.username || !formData.password) {
+      toast.error("Username dan password wajib diisi");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Validasi captcha terlebih dahulu
-      if (parseInt(formData.captcha) !== captchaAnswer) {
-        toast.error("Captcha salah! Silakan coba lagi.");
-        generateCaptcha(); // Generate captcha baru
-        setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
-        setIsLoading(false);
-        return;
-      }
-
-      // Login menggunakan API backend
-      try {
-        const response = await authAPI.login(formData.username, formData.password);
-        
-        // Simpan token dari response
-        localStorage.setItem("adminToken", response.access_token);
+      const success = await login(formData.username, formData.password);
+      
+      if (success) {
         toast.success("Login berhasil!");
-        
-        // Redirect ke admin dashboard
-        setTimeout(() => {
-          window.location.href = "/admin";
-        }, 1000);
-      } catch (apiError: any) {
-        const errorMessage = apiError.response?.data?.message || "Username atau password salah!";
-        toast.error(errorMessage);
-        generateCaptcha(); // Generate captcha baru setelah login gagal
-        setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
+        router.push("/admin");
+      } else {
+        toast.error("Username atau password salah");
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan saat login");
-      generateCaptcha(); // Generate captcha baru setelah error
-      setFormData(prev => ({ ...prev, captcha: "" })); // Reset captcha input
+      console.error("Login error:", error);
+      toast.error("Terjadi kesalahan pada server");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative w-full max-w-md z-10">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Login</h1>
-          <p className="text-gray-600">Virtual Tour Kebun Jubung</p>
-          <p className="text-sm text-gray-500 mt-2">PMM Jember</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
+            <Lock className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Virtual Tour Admin
+          </h1>
+          <p className="text-gray-300 text-lg">Kebun Jubung System</p>
         </div>
 
-        <div className="bg-white shadow-lg rounded-lg">
-          <div className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+        {/* Login Form */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Username Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-200">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
-                  id="username"
-                  name="username"
                   type="text"
-                  placeholder="Masukkan username"
+                  name="username"
                   value={formData.username}
                   onChange={handleInputChange}
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Masukkan username"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+            </div>
+            
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-200">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
-                  id="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
-                  type="password"
-                  placeholder="Masukkan password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Masukkan password"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
-
-              <div className="space-y-2">
-                <label htmlFor="captcha" className="block text-sm font-medium text-gray-700">Captcha</label>
-                <div className="flex items-center space-x-3">
-                  <div className="bg-gray-100 px-4 py-2 rounded-md border font-mono text-lg font-bold text-gray-800 min-w-[120px] text-center">
-                    {captchaQuestion}
-                  </div>
-                  <input
-                    id="captcha"
-                    name="captcha"
-                    type="number"
-                    placeholder="Jawaban"
-                    value={formData.captcha}
-                    onChange={handleInputChange}
-                    required
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      generateCaptcha();
-                      setFormData(prev => ({ ...prev, captcha: "" }));
-                    }}
-                    className="px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-                    title="Generate captcha baru"
-                  >
-                    🔄
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Memproses..." : "Login"}
-              </button>
-            </form>
-
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 font-medium mb-2">Demo Credentials:</p>
-              <p className="text-xs text-gray-500">Username: admin</p>
-              <p className="text-xs text-gray-500">Password: admin123</p>
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500">
-                Nanti akan terintegrasi dengan sistem login web utama
-              </p>
-            </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  <span>Login</span>
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Demo Credentials */}
+          <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
+            <p className="text-sm text-gray-300 text-center">
+              <span className="font-semibold text-blue-400">Demo Credentials:</span>
+            </p>
+            <p className="text-xs text-gray-400 text-center mt-1">
+              vtouradmin / vtouradmin123
+            </p>
           </div>
         </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-400">
+            © 2024 Kebun Jubung System. All rights reserved.
+          </p>
+        </div>
       </div>
-      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+
+      <style jsx>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   );
 }

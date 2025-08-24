@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { VTourScene, Hotspot } from '@/types/virtual-tour';
-import { saveVtourHotspots } from '@/lib/data/virtual-tour';
+import { Scene, Hotspot } from '@/types/virtual-tour';
 import { nanoid } from 'nanoid';
 import toast from 'react-hot-toast';
 import { Plus, X, Save, MousePointerClick } from 'lucide-react';
@@ -10,7 +9,7 @@ import PannellumViewer from './PannellumViewer';
 import InfoEditor from './InfoEditor';
 import DraggableHotspot from './DraggableHotspot';
 
-export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, onExit: () => void }) {
+export default function PlacementEditor({ scene, onExit }: { scene: Scene, onExit: () => void }) {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -20,12 +19,13 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
   const [showDraggableHotspot, setShowDraggableHotspot] = useState(false);
   const [tempHotspotCoords, setTempHotspotCoords] = useState({ pitch: 0, yaw: 0 });
   const [dragInitialPosition, setDragInitialPosition] = useState({ x: 50, y: 50 });
+  const [viewerReady, setViewerReady] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
 
   useEffect(() => {
-    setHotspots(scene.hotspots?.filter(h => h.type === 'info') || []);
+    setHotspots(scene.hotspots?.filter((h: Hotspot) => h.type === 'info') || []);
   }, [scene]);
 
   // Fungsi untuk reload hotspot dari server
@@ -48,6 +48,12 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
     }
   };
 
+  // Handle viewer ready state
+  const handleViewerReady = () => {
+    console.log('PlacementEditor: Viewer is ready');
+    setViewerReady(true);
+  };
+
   const handleViewerClick = (coords: { pitch: number, yaw: number }) => {
     console.log('PlacementEditor handleViewerClick called:', { coords, isAdding });
     if (!isAdding) {
@@ -68,6 +74,11 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
   };
 
   const handleAddWithDraggable = (e?: React.MouseEvent) => {
+    if (!viewerReady) {
+      toast.error('Viewer belum siap. Silakan tunggu sebentar.');
+      return;
+    }
+
     if (e && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -84,11 +95,15 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
     setShowDraggableHotspot(false);
   };
 
-  const handleDraggablePositionChange = (coords: { pitch: number; yaw: number }) => {
-    setTempHotspotCoords(coords);
+  const handleDraggablePositionChange = (coords: { pitch: number; yaw: number } | null) => {
+    if (coords) {
+      console.log('PlacementEditor: Draggable position changed to:', coords);
+      setTempHotspotCoords(coords);
+    }
   };
 
   const handleUpdateHotspotPosition = (hotspotId: string | number, coords: { pitch: number; yaw: number }) => {
+    console.log('PlacementEditor: Updating hotspot position:', { hotspotId, coords });
     setHotspots(prev => prev.map(h => 
       h.id === hotspotId ? { ...h, pitch: coords.pitch, yaw: coords.yaw } : h
     ));
@@ -98,21 +113,12 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
   const handleDraggableConfirm = () => {
     console.log('PlacementEditor: Draggable confirm called with coords:', tempHotspotCoords);
     
-    // Validasi koordinat - pastikan koordinat dalam range yang valid
-    const isValidCoords = (
-      !isNaN(tempHotspotCoords.pitch) && !isNaN(tempHotspotCoords.yaw) &&
-      tempHotspotCoords.pitch >= -90 && tempHotspotCoords.pitch <= 90 &&
-      tempHotspotCoords.yaw >= -180 && tempHotspotCoords.yaw <= 180
-    );
-    
-    if (!isValidCoords) {
-      console.warn('PlacementEditor: Invalid coordinates detected:', tempHotspotCoords);
-      toast.error('Posisi hotspot tidak valid, silakan coba lagi');
+    // Validasi koordinat
+    if (isNaN(tempHotspotCoords.pitch) || isNaN(tempHotspotCoords.yaw)) {
+      toast.error('Koordinat tidak valid. Silakan coba lagi.');
       return;
     }
-    
-    console.log('PlacementEditor: Coordinates accepted:', tempHotspotCoords);
-    
+
     const newHotspot: Hotspot = {
       id: nanoid(),
       scene_id: scene.id,
@@ -123,160 +129,177 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
       sentences: [{ id: nanoid(), clause: '', voiceSource: 'browser' }],
     };
 
-    console.log('PlacementEditor: Creating new info hotspot:', newHotspot);
+    console.log('PlacementEditor: Creating new hotspot:', newHotspot);
     setHotspots(prev => [...prev, newHotspot]);
     setSelectedHotspot(newHotspot);
     setIsModalOpen(true);
     setShowDraggableHotspot(false);
     setIsDirty(true);
-    console.log('PlacementEditor: Hotspot added to state and modal opened');
   };
 
-  const handleHotspotClick = (hotspot: Hotspot) => {
-    if (isAdding) return toast.error("Keluar dari mode 'Add' terlebih dahulu.");
-    setSelectedHotspot(hotspot);
-    setIsModalOpen(true);
-  };
-
-  const handleSaveHotspotData = (hotspotData: Partial<Hotspot>) => {
-    setHotspots(prev => prev.map(h => (h.id === selectedHotspot?.id ? { ...h, ...hotspotData } : h)));
-    setIsModalOpen(false); setSelectedHotspot(null); setIsDirty(true);
-  };
-    
-  const handleDeleteHotspot = () => {
-    setHotspots(prev => prev.filter(h => h.id !== selectedHotspot?.id));
-    setIsModalOpen(false); setSelectedHotspot(null); setIsDirty(true);
-  };
-
-  const handleSaveAll = async () => {
+  const handleSave = async () => {
     if (!isDirty) return;
-    console.log('PlacementEditor: Starting save process with hotspots:', hotspots);
+
     setIsSaving(true);
     try {
-      const existingHotspots = scene.hotspots?.filter(h => h.type === 'info') || [];
-      console.log('PlacementEditor: Existing hotspots:', existingHotspots);
+      console.log('PlacementEditor: Saving hotspots:', hotspots);
       
-      // Update atau create hotspot
-      for (const hotspot of hotspots) {
-        // Validasi koordinat sebelum menyimpan
-        if (!hotspot.pitch && hotspot.pitch !== 0 || !hotspot.yaw && hotspot.yaw !== 0) {
-          console.warn('PlacementEditor: Skipping hotspot with invalid coordinates:', hotspot);
-          continue;
+      // Filter dan validasi hotspots sebelum save
+      const validHotspots = hotspots.filter(hotspot => {
+        const isValid = !isNaN(hotspot.pitch) && !isNaN(hotspot.yaw) &&
+                       hotspot.pitch >= -90 && hotspot.pitch <= 90 &&
+                       hotspot.yaw >= -180 && hotspot.yaw <= 180;
+        
+        if (!isValid) {
+          console.warn('PlacementEditor: Invalid coordinates detected:', tempHotspotCoords);
         }
-        
-        const payload = {
-          type: hotspot.type,
-          yaw: hotspot.yaw,
-          pitch: hotspot.pitch,
-          label: hotspot.label,
-          description: hotspot.description,
-          sentences: hotspot.sentences || []
-        };
-        
-        console.log('PlacementEditor: Preparing to save hotspot:', hotspot.id, payload);
-        
-        // Cek apakah hotspot sudah ada (ID numerik = existing, string = new)
-        const isExisting = hotspot.id && typeof hotspot.id === 'number';
-        
-        if (isExisting) {
-          // Update hotspot yang sudah ada
-          console.log('PlacementEditor: Updating existing hotspot:', hotspot.id);
+        return isValid;
+      });
+
+      console.log('PlacementEditor: Valid hotspots to save:', validHotspots);
+
+      // Update existing hotspots
+      for (const hotspot of validHotspots) {
+        if (hotspot.id && typeof hotspot.id === 'string' && hotspot.id.startsWith('temp_')) {
+          // Create new hotspot
+          const response = await fetch('/api/vtour/hotspots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              scene_id: scene.id,
+              type: hotspot.type,
+              pitch: hotspot.pitch,
+              yaw: hotspot.yaw,
+              label: hotspot.label,
+              description: hotspot.description,
+              sentences: hotspot.sentences,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error('PlacementEditor: Failed to create hotspot:', hotspot.id, response.status);
+            throw new Error(`Failed to create hotspot: ${response.statusText}`);
+          }
+        } else {
+          // Update existing hotspot
           const response = await fetch(`/api/vtour/hotspots/${hotspot.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+              pitch: hotspot.pitch,
+              yaw: hotspot.yaw,
+              label: hotspot.label,
+              description: hotspot.description,
+              sentences: hotspot.sentences,
+            }),
           });
+
           if (!response.ok) {
             console.error('PlacementEditor: Failed to update hotspot:', hotspot.id, response.status);
-            throw new Error(`Failed to update hotspot ${hotspot.id}`);
+            throw new Error(`Failed to update hotspot: ${response.statusText}`);
           }
-        } else {
-          // Create hotspot baru
-          console.log('PlacementEditor: Creating new hotspot for scene:', scene.id);
-          const response = await fetch(`/api/vtour/scenes/${scene.id}/hotspots`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (!response.ok) {
-            console.error('PlacementEditor: Failed to create hotspot:', response.status);
-            throw new Error('Failed to create new hotspot');
-          }
-          console.log('PlacementEditor: Successfully created new hotspot');
         }
       }
-      
-      // Hapus hotspot yang sudah tidak ada di state
-      const currentHotspotIds = hotspots.map(h => h.id).filter(id => typeof id === 'number');
-      for (const existingHotspot of existingHotspots) {
-        if (existingHotspot.id && !currentHotspotIds.includes(existingHotspot.id)) {
-          console.log('PlacementEditor: Deleting removed hotspot:', existingHotspot.id);
-          await fetch(`/api/vtour/hotspots/${existingHotspot.id}`, { method: 'DELETE' });
-        }
-      }
-      
-      toast.success('Semua perubahan berhasil disimpan!');
-      setIsDirty(false);
-      // Reload hotspot dari server untuk menampilkan data terbaru
-      console.log('PlacementEditor: Save completed, calling reloadHotspots...');
+
       await reloadHotspots();
-      console.log('PlacementEditor: reloadHotspots completed');
+      setIsDirty(false);
+      toast.success('Hotspots berhasil disimpan!');
     } catch (error) {
       console.error('PlacementEditor: Error during save:', error);
-      toast.error('Gagal menyimpan perubahan.');
+      toast.error('Gagal menyimpan hotspots: ' + (error as Error).message);
     } finally {
       setIsSaving(false);
     }
   };
-  const handleQuit = () => {
-    if (isDirty && !window.confirm("Perubahan belum disimpan. Yakin keluar?")) return;
-    onExit();
+
+  const handleDeleteHotspot = async (hotspotId: string | number) => {
+    try {
+      // Jika hotspot sudah ada di database (ID numerik), hapus dari database
+      if (typeof hotspotId === 'number') {
+        const response = await fetch(`/api/vtour/hotspots/${hotspotId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          console.error('PlacementEditor: Failed to delete hotspot from database:', hotspotId);
+          toast.error('Gagal menghapus hotspot dari database');
+          return;
+        }
+      }
+      
+      // Hapus dari state
+      setHotspots(prev => prev.filter(h => h.id !== hotspotId));
+      setIsDirty(true);
+      toast.success('Hotspot berhasil dihapus');
+    } catch (error) {
+      console.error('PlacementEditor: Error deleting hotspot:', error);
+      toast.error('Gagal menghapus hotspot');
+    }
+  };
+
+  const handleHotspotClick = (hotspot: Hotspot) => {
+    setSelectedHotspot(hotspot);
+    setIsModalOpen(true);
   };
 
   return (
-    <>
-      <div ref={containerRef} className="relative w-full h-screen bg-white overflow-hidden">
-        <div className="absolute top-4 right-4 z-20 flex gap-2">
-          {!showDraggableHotspot ? (
-            <div className="flex gap-1">
-              <button onClick={() => setIsAdding(!isAdding)} className={`font-semibold px-3 py-2 rounded-l-lg shadow-lg flex items-center gap-2 transition-colors ${isAdding ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-white/90 text-gray-800 hover:bg-white'}`}>
-                {isAdding ? <X size={16} /> : <Plus size={16} />}
-                {isAdding ? 'Cancel' : 'Click Mode'}
-              </button>
-              <button onClick={(e) => handleAddWithDraggable(e)} className="bg-green-500 text-white font-semibold px-3 py-2 rounded-r-lg shadow-lg hover:bg-green-600 flex items-center gap-2 transition-colors">
-                <Plus size={16} /> Drag Mode
-              </button>
-            </div>
-          ) : (
-            <button onClick={handleCancelDraggable} className="bg-red-500 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:bg-red-600 flex items-center gap-2">
-              <X size={16} /> Cancel Drag
-            </button>
-          )}
-          <button onClick={handleSaveAll} disabled={!isDirty || isSaving} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-            <Save size={18} /> {isSaving ? 'Menyimpan...' : 'Save All Changes'}
-          </button>
-          <button onClick={handleQuit} className="bg-gray-800 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:bg-gray-900 flex items-center gap-2">
-            <X size={18} /> Quit
-          </button>
-        </div>
+    <div className="relative w-full h-full">
+      <div className="absolute top-4 left-4 z-20 flex gap-2">
+        <button
+          onClick={() => setIsAdding(true)}
+          disabled={isAdding || showDraggableHotspot || !viewerReady}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <Plus size={16} />
+          Add Hotspot (Click)
+        </button>
+        
+        <button
+          onClick={handleAddWithDraggable}
+          disabled={isAdding || showDraggableHotspot || !viewerReady}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <MousePointerClick size={16} />
+          Add Hotspot (Drag)
+        </button>
+        
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || isSaving}
+          className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <Save size={16} />
+          {isSaving ? 'Saving...' : 'Save Changes'}
+        </button>
+        
+        <button
+          onClick={onExit}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2"
+        >
+          <X size={16} />
+          Exit
+        </button>
+      </div>
 
-        {isAdding && (<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-lg shadow-lg font-semibold flex items-center gap-2 animate-bounce"><MousePointerClick size={18}/> Klik untuk menempatkan hotspot info.</div>)}
-        
-        {showDraggableHotspot && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-green-400 text-green-900 px-4 py-2 rounded-lg shadow-lg font-semibold flex items-center gap-2 animate-pulse">
-            <Plus size={18}/> Gerakkan hotspot ke posisi yang diinginkan, lalu klik "Konfirmasi Posisi".
-          </div>
-        )}
-        
-        <PannellumViewer 
+      {!viewerReady && (
+        <div className="absolute top-16 left-4 z-20 bg-yellow-500 text-white px-4 py-2 rounded-lg">
+          Menunggu viewer siap...
+        </div>
+      )}
+
+      <div ref={containerRef} className="relative w-full h-full">
+        <PannellumViewer
           ref={viewerRef}
-          imageUrl={`/api/vtour/images/${encodeURIComponent(scene.image_path)}`}
+          imageUrl={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${scene.image_path}`}
+          initialYaw={scene.default_yaw || 0}
+          initialPitch={scene.default_pitch || 0}
           hotspots={hotspots}
           onViewerClick={handleViewerClick}
           onHotspotClick={handleHotspotClick}
+          onLoad={handleViewerReady}
         />
-        
-        {showDraggableHotspot && (
+
+        {showDraggableHotspot && viewerReady && containerRef.current && (
           <DraggableHotspot
             onPositionChange={handleDraggablePositionChange}
             onConfirm={handleDraggableConfirm}
@@ -287,14 +310,37 @@ export default function PlacementEditor({ scene, onExit }: { scene: VTourScene, 
         )}
       </div>
 
-      <InfoEditor
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveHotspotData}
-        onDelete={handleDeleteHotspot}
-        hotspot={selectedHotspot}
-        isSaving={isSaving}
-      />
-    </>
+      {isModalOpen && selectedHotspot && (
+        <InfoEditor
+          hotspot={selectedHotspot}
+          onSave={(data: { label: string; description: string; sentences: any[] }) => {
+            if (selectedHotspot.id) {
+              const updatedHotspot: Hotspot = {
+                ...selectedHotspot,
+                ...data,
+              } as Hotspot;
+              
+              setHotspots(prev => 
+                prev.map(h => h.id === selectedHotspot.id ? updatedHotspot : h)
+              );
+              setIsDirty(true);
+            }
+            setIsModalOpen(false);
+            setSelectedHotspot(null);
+          }}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setSelectedHotspot(null);
+          }}
+          onDelete={() => {
+            if (selectedHotspot.id) {
+              handleDeleteHotspot(selectedHotspot.id);
+            }
+            setIsModalOpen(false);
+            setSelectedHotspot(null);
+          }}
+        />
+      )}
+    </div>
   );
 }

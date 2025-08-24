@@ -40,6 +40,25 @@ const nextConfig = {
   telemetry: {
     enabled: false,
   },
+
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_VTOUR_API_URL: process.env.NEXT_PUBLIC_VTOUR_API_URL || 'http://localhost:8000',
+  },
+
+  // Webpack configuration untuk Pannellum
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
