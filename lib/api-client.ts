@@ -37,7 +37,7 @@ apiClient.interceptors.response.use(
 
 export const authAPI = {
   login: async (username: string, password: string) => {
-    const response = await axios.post('/api/login/vtour-admin', {
+    const response = await apiClient.post('/login/vtour-admin', {
       username,
       password,
     });
@@ -105,49 +105,25 @@ export const vtourAPI = {
     return response.data;
   },
 
-  updateMenuOrder: async (orders: { id: number; order: number }[]) => {
-    const response = await apiClient.put('/vtour/menus/update-order', { orders });
-    return response.data;
-  },
-
   getHotspots: async (sceneId: string | number) => {
     const response = await apiClient.get(`/vtour/scenes/${sceneId}/hotspots`);
     return response.data;
   },
 
-  createHotspot: async (data: any) => {
-    const response = await apiClient.post('/vtour/hotspots', data);
+  createHotspot: async (sceneId: string | number, data: any) => {
+    const response = await apiClient.post(`/vtour/scenes/${sceneId}/hotspots`, data);
     return response.data;
   },
 
-  updateHotspot: async (id: string | number, data: any) => {
-    const response = await apiClient.put(`/vtour/hotspots/${id}`, data);
+  updateHotspot: async (sceneId: string | number, hotspotId: string | number, data: any) => {
+    const response = await apiClient.put(`/vtour/scenes/${sceneId}/hotspots/${hotspotId}`, data);
     return response.data;
   },
 
-  deleteHotspot: async (id: string | number) => {
-    const response = await apiClient.delete(`/vtour/hotspots/${id}`);
-    return response.data;
-  },
-
-  getSettings: async () => {
-    const response = await apiClient.get('/vtour/settings');
-    return response.data;
-  },
-
-  updateSettings: async (data: any) => {
-    const response = await apiClient.put('/vtour/settings', data);
-    return response.data;
-  },
-
-  uploadLogo: async (formData: FormData) => {
-    const response = await apiClient.post('/vtour/settings/logo', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  deleteHotspot: async (sceneId: string | number, hotspotId: string | number) => {
+    const response = await apiClient.delete(`/vtour/scenes/${sceneId}/hotspots/${hotspotId}`);
     return response.data;
   },
 };
 
-export { apiClient };
+export default apiClient;

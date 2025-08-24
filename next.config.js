@@ -16,7 +16,7 @@ const nextConfig = {
   images: {
     formats: ['image/webp'],
     minimumCacheTTL: 60,
-    domains: ['localhost', '127.0.0.1'],
+    domains: ['localhost', '127.0.0.1', 'wisatajubung.com', 'vtour.wisatajubung.com'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -28,6 +28,16 @@ const nextConfig = {
         protocol: 'http',
         hostname: '127.0.0.1',
         port: '8000',
+        pathname: '/storage/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'wisatajubung.com',
+        pathname: '/storage/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vtour.wisatajubung.com',
         pathname: '/storage/**',
       },
     ],
@@ -43,8 +53,8 @@ const nextConfig = {
 
   // Environment variables
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-    NEXT_PUBLIC_VTOUR_API_URL: process.env.NEXT_PUBLIC_VTOUR_API_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://wisatajubung.com/api',
+    NEXT_PUBLIC_VTOUR_API_URL: process.env.NEXT_PUBLIC_VTOUR_API_URL || 'https://wisatajubung.com/api',
   },
 
   // Webpack configuration untuk Pannellum
