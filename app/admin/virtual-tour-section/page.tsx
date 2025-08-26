@@ -1,4 +1,5 @@
-// Lokasi file: frontend/app/admin/virtual-tour-section/page.tsx
+// frontend/app/admin/virtual-tour-section/page.tsx
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -31,7 +32,6 @@ const EmptyState = () => (
     </p>
   </div>
 );
-
 
 // --- Komponen Halaman Utama ---
 
@@ -74,7 +74,7 @@ export default function VtourScenePage() {
 
   const handleSuccess = () => {
     loadScenes(1);
-    setIsModalOpen(false);
+    setIsCreateModalOpen(false); // Gantilah ini untuk menutup modal create scene
   }
 
   const handleDeleteClick = (scene: Scene) => {

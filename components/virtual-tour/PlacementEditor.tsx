@@ -290,7 +290,7 @@ export default function PlacementEditor({ scene, onExit }: { scene: Scene, onExi
       <div ref={containerRef} className="relative w-full h-full">
         <PannellumViewer
           ref={viewerRef}
-          imageUrl={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${scene.image_path}`}
+          imageUrl={`/api/vtour/images/${encodeURI(scene.image_path)}`}
           initialYaw={scene.default_yaw || 0}
           initialPitch={scene.default_pitch || 0}
           hotspots={hotspots}

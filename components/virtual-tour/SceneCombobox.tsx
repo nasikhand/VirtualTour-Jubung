@@ -37,7 +37,7 @@ export default function SceneCombobox({ scenes, value, onChange, placeholder = "
           <span className="flex items-center">
             {/* ✅ Menggunakan API Proxy untuk gambar */}
             <img 
-              src={`/api/vtour/images/${encodeURIComponent(selectedScene.image_path)}`} 
+              src={`/api/vtour/images/${encodeURI(selectedScene.image_path)}`} 
               alt={selectedScene.name}
               className="h-6 w-8 rounded-sm object-cover mr-3"
             />
@@ -61,7 +61,7 @@ export default function SceneCombobox({ scenes, value, onChange, placeholder = "
               <div key={scene.id} onClick={() => { onChange(scene.id); setIsOpen(false); setQuery(''); }} className="relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900 hover:bg-blue-500 hover:text-white flex items-center">
                 {selectedScene?.id === scene.id && (<span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600"><Check className="h-5 w-5" /></span>)}
                 {/* ✅ Menggunakan API Proxy untuk gambar */}
-                <img src={`/api/vtour/images/${encodeURIComponent(scene.image_path)}`} alt={scene.name} className="h-8 w-12 rounded-md object-cover mr-3"/>
+                <img src={`/api/vtour/images/${encodeURI(scene.image_path)}`} alt={scene.name} className="h-8 w-12 rounded-md object-cover mr-3"/>
                 <span className={`block truncate ${selectedScene?.id === scene.id ? 'font-medium' : 'font-normal'}`}>{scene.name}</span>
               </div>
             ))

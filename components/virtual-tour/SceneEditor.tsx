@@ -32,7 +32,7 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
   // ✅ Menggunakan API Proxy untuk gambar
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '';
-    return `/api/vtour/images/${encodeURIComponent(imagePath)}`;
+    return `/api/vtour/images/${encodeURI(imagePath)}`;
   };
   const imageUrl = getImageUrl(scene.image_path);
 

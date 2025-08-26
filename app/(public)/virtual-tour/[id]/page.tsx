@@ -21,7 +21,7 @@ export default function VirtualTourDynamicPage() {
       if (!sceneId) return;
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         
         // Fetch menus and settings in parallel
         const [menusResponse, settingsResponse] = await Promise.all([

@@ -15,7 +15,7 @@ type Props = {
 
 export default function SceneCard({ scene, onDelete, href, viewMode = 'grid', isInMenu = false }: Props) {
   const router = useRouter();
-  const imageUrl = scene.image_path ? `/api/vtour/images/${encodeURIComponent(scene.image_path)}` : '/placeholder-image.jpg';
+  const imageUrl = scene.image_path ? `/api/vtour/images/${encodeURI(scene.image_path)}` : '/placeholder-image.jpg';
 
   // Tentukan URL tujuan, default ke halaman edit scene jika tidak ada prop href
   const targetUrl = href || `/admin/virtual-tour-section/scenes/${scene.id}/edit`;

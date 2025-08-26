@@ -71,7 +71,12 @@ export default function VirtualTourClientPage({
       }
     }
   };
-  
+
+  // Gambar fallback jika scene.image_path kosong atau terjadi error
+  const getImageUrl = (path?: string) => {
+    return path ? `/api/vtour/images/${encodeURI(path)}` : '/placeholder-image.jpg';
+  };
+
   return (
     <>
       <div className="relative w-full h-screen bg-black overflow-hidden">
@@ -152,7 +157,7 @@ export default function VirtualTourClientPage({
 
         {/* Viewer Utama */}
         <PannellumViewer
-          imageUrl={`/api/vtour/images/${encodeURIComponent(activeScene.image_path)}`}
+          imageUrl={getImageUrl(activeScene.image_path)}
           initialYaw={activeScene.default_yaw ?? 0}
           initialPitch={activeScene.default_pitch ?? 0}
           hotspots={activeScene.hotspots}
@@ -186,7 +191,7 @@ export default function VirtualTourClientPage({
                 >
                   <div className="relative w-full h-full">
                     <img
-                      src={`/api/vtour/images/${encodeURIComponent(menu.scene?.image_path ?? '')}`}
+                      src={getImageUrl(menu.scene?.image_path)}
                       alt={menu.name}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />

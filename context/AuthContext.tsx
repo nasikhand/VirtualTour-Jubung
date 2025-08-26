@@ -1,117 +1,102 @@
-// File: context/AuthContext.tsx (Untuk Virtual Tour)
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiClient, authAPI } from '@/lib/api-client';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import apiClient, { authAPI } from "@/lib/api-client";
 
-interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  user: any | null;
+type User = { id: number; username: string; name: string; [k: string]: any } | null;
+
+type AuthContextValue = {
+  user: User;
   token: string | null;
+  loading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
-}
+  logout: () => Promise<void>;
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any | null>(null);
+export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const [user, setUser] = useState<User>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
+  // Init: ambil token → set header → getProfile
   useEffect(() => {
-    const checkUser = async () => {
-      const storedToken = localStorage.getItem('vtourAdminToken');
-      if (storedToken) {
-        try {
-          // Set token untuk API client
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          
-          const response = await authAPI.getProfile();
-          setUser(response.data);
+    const initAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem("vtourAdminToken");
+        if (storedToken) {
           setToken(storedToken);
-        } catch (error) {
-          console.error('Token validation failed:', error);
-          logout();
+          apiClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+          const profile = await authAPI.getProfile();
+          setUser(profile);
         }
+      } catch (e) {
+        localStorage.removeItem("vtourAdminToken");
+        setUser(null);
+        setToken(null);
+      } finally {
+        setLoading(false);
       }
-      setIsLoading(false);
     };
-    checkUser();
+    initAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (username: string, password: string) => {
     try {
-      const response = await authAPI.login(username, password);
-      
-      // Handle different response structures
-      let accessToken, userData;
-      
-      if (response.data) {
-        // Response has data property
-        accessToken = response.data.token;
-        userData = response.data.user;
-      } else if (response.token) {
-        // Response is direct
-        accessToken = response.token;
-        userData = response.user;
-      } else {
-        console.error('Invalid response structure:', response);
-        return false;
-      }
-      
-      if (!accessToken) {
-        console.error('No token received from server');
-        return false;
-      }
-      
-      localStorage.setItem('vtourAdminToken', accessToken);
+      const payload = await authAPI.login(username, password);
+      const accessToken: string | undefined = payload?.token;
+      const userFromLogin = payload?.user ?? null;
+
+      if (!accessToken) return false;
+
+      // Simpan token + aktifkan header
+      localStorage.setItem("vtourAdminToken", accessToken);
       setToken(accessToken);
-      setUser(userData);
-      
-      // Set token untuk API client
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-      
+      apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
+      // Opsional (disarankan): verifikasi token dengan getProfile
+      try {
+        const profile = await authAPI.getProfile();
+        setUser(profile || userFromLogin);
+      } catch {
+        // Token tidak valid untuk /profile → gagal
+        localStorage.removeItem("vtourAdminToken");
+        setUser(null);
+        setToken(null);
+        return false;
+      }
+
       return true;
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Login failed in context:", err);
       return false;
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
-      if (token) {
-        await authAPI.logout();
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('vtourAdminToken');
-      setToken(null);
+      await authAPI.logout();
+    } catch {}
+    finally {
+      localStorage.removeItem("vtourAdminToken");
       setUser(null);
-      delete apiClient.defaults.headers.common['Authorization'];
-      window.location.href = '/admin/sign-in';
+      setToken(null);
+      window.location.href = "/admin/sign-in";
     }
-  };
+  }, []);
 
-  const value = {
-    isAuthenticated: !!token,
-    isLoading,
-    user,
-    token,
-    login,
-    logout
-  };
+  const value = useMemo(
+    () => ({ user, token, loading, login, logout }),
+    [user, token, loading, login, logout]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
+  return ctx;
 };

@@ -1,87 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-// DELETE: Hapus hotspot berdasarkan ID
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+/** GET: hotspot by id */
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const hotspotId = params.id;
-
-    // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/api/vtour/hotspots/${hotspotId}`, {
-      method: "DELETE",
-      headers: {
-        "Accept": "application/json",
-      },
+    const res = await fetch(`${API_BASE}/api/vtour/hotspots/${params.id}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
     });
 
-    const data = await res.json();
-    
-    if (!res.ok) {
-        console.error("Laravel Error:", data);
-        return NextResponse.json({ message: "Gagal menghapus hotspot dari backend" }, { status: res.status });
-    }
+    if (res.status === 204) return new NextResponse(null, { status: 204 });
 
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error("Laravel Error (GET hotspot by id):", data);
+      return NextResponse.json({ message: "Gagal mengambil hotspot dari backend" }, { status: res.status });
+    }
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Error di API proxy hotspot delete:", error);
+    console.error("Proxy Error (GET hotspot by id):", error);
     return NextResponse.json({ message: "Gagal memproses permintaan" }, { status: 500 });
   }
 }
 
-// PUT: Update hotspot berdasarkan ID
+/** PUT: update hotspot by id */
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await req.json();
-    const hotspotId = params.id;
-
-    // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/api/vtour/hotspots/${hotspotId}`, {
+    const res = await fetch(`${API_BASE}/api/vtour/hotspots/${params.id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
-    
-    if (!res.ok) {
-        console.error("Laravel Error:", data);
-        return NextResponse.json({ message: "Gagal mengupdate hotspot di backend" }, { status: res.status });
-    }
+    if (res.status === 204) return new NextResponse(null, { status: 204 });
 
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error("Laravel Error (PUT hotspot):", data);
+      return NextResponse.json({ message: "Gagal mengupdate hotspot di backend" }, { status: res.status });
+    }
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Error di API proxy hotspot update:", error);
+    console.error("Proxy Error (PUT hotspot):", error);
     return NextResponse.json({ message: "Gagal memproses permintaan" }, { status: 500 });
   }
 }
 
-// GET: Ambil hotspot berdasarkan ID
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+/** DELETE: delete hotspot by id */
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const hotspotId = params.id;
-
-    // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/api/vtour/hotspots/${hotspotId}`, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
-      },
+    const res = await fetch(`${API_BASE}/api/vtour/hotspots/${params.id}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
     });
 
-    const data = await res.json();
-    
-    if (!res.ok) {
-        console.error("Laravel Error:", data);
-        return NextResponse.json({ message: "Gagal mengambil hotspot dari backend" }, { status: res.status });
-    }
+    if (res.status === 204) return new NextResponse(null, { status: 204 });
 
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error("Laravel Error (DELETE hotspot):", data);
+      return NextResponse.json({ message: "Gagal menghapus hotspot dari backend" }, { status: res.status });
+    }
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Error di API proxy hotspot get:", error);
+    console.error("Proxy Error (DELETE hotspot):", error);
     return NextResponse.json({ message: "Gagal memproses permintaan" }, { status: 500 });
   }
 }

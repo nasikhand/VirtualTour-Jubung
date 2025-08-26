@@ -1,4 +1,5 @@
 // frontend/components/virtual-tour/PannellumViewer.tsx
+
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
@@ -34,10 +35,26 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
     updateHotspots,
     getViewer: () => viewerRef.current,
   }));
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+  // WebGL support check
+  const isWebGLSupported = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+    } catch (e) {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!isWebGLSupported()) {
+      setError('WebGL not supported in this browser.');
+    }
+  }, []);
 
   const loadPannellumScripts = useCallback(() => {
     if (typeof window.pannellum !== 'undefined') {
@@ -147,8 +164,11 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
       if (onCameraUpdate) {
         viewer.on('animatefinished', () => {
           try {
-            const position = viewer.getViewer().getPosition();
-            onCameraUpdate({ yaw: position.yaw, pitch: position.pitch });
+            const yaw = (viewer as any).getYaw ? (viewer as any).getYaw() : undefined;
+            const pitch = (viewer as any).getPitch ? (viewer as any).getPitch() : undefined;
+            if (typeof yaw === 'number' && typeof pitch === 'number') {
+              onCameraUpdate({ yaw, pitch });
+            }
           } catch (err) {
             console.error('Camera update error:', err);
           }

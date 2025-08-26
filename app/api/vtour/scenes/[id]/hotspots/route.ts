@@ -1,27 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-// GET: Ambil semua hotspot dari scene tertentu
+function authHeaders(req: NextRequest) {
+  const h = new Headers({ Accept: "application/json" });
+  const auth = req.headers.get("authorization");
+  if (auth) h.set("authorization", auth);
+  return h;
+}
+
+// GET: semua hotspot untuk scene tertentu
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const sceneId = params.id;
-
-    // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/api/vtour/scenes/${sceneId}/hotspots`, {
+    const res = await fetch(`${API_BASE}/api/vtour/scenes/${params.id}/hotspots`, {
       method: "GET",
-      headers: {
-        "Accept": "application/json",
-      },
+      headers: authHeaders(req),
     });
 
-    const data = await res.json();
-    
-    if (!res.ok) {
-        console.error("Laravel Error:", data);
-        return NextResponse.json({ message: "Gagal mengambil hotspot dari backend" }, { status: res.status });
-    }
+    if (res.status === 204) return new NextResponse(null, { status: 204 });
+    const data = await res.json().catch(() => ({}));
 
+    if (!res.ok) {
+      console.error("Laravel Error (GET scene hotspots):", data);
+      return NextResponse.json({ message: "Gagal mengambil hotspot dari backend" }, { status: res.status });
+    }
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
     console.error("Error di API proxy hotspot get:", error);
@@ -29,29 +31,27 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// POST: Tambah hotspot baru ke sebuah scene
+// POST: tambah hotspot ke scene
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await req.json();
-    const sceneId = params.id;
-
-    // Meneruskan permintaan ke backend Laravel
-    const res = await fetch(`${apiUrl}/api/vtour/scenes/${sceneId}/hotspots`, {
+    const res = await fetch(`${API_BASE}/api/vtour/scenes/${params.id}/hotspots`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
+      headers: (() => {
+        const h = authHeaders(req);
+        h.set("Content-Type", "application/json");
+        return h;
+      })(),
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
-    
-    if (!res.ok) {
-        console.error("Laravel Error:", data);
-        return NextResponse.json({ message: "Gagal menyimpan hotspot ke backend" }, { status: res.status });
-    }
+    if (res.status === 204) return new NextResponse(null, { status: 204 });
+    const data = await res.json().catch(() => ({}));
 
+    if (!res.ok) {
+      console.error("Laravel Error (POST scene hotspot):", data);
+      return NextResponse.json({ message: "Gagal menyimpan hotspot ke backend" }, { status: res.status });
+    }
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
     console.error("Error di API proxy hotspot:", error);
