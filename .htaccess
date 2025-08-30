@@ -1,9 +1,16 @@
-RewriteEngine On
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/virtual-tour"
+PassengerBaseURI "/"
+PassengerNodejs "/home/wisataju/nodevenv/sistem-informasi-manajemen_PMM-JEMBER/virtual-tour/18/bin/node"
+PassengerAppType node
+PassengerStartupFile start
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 
-# Handle Angular and React Router
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
+RewriteEngine On
+# Forward all requests ke Next.js yang jalan di port 3001
+RewriteCond %{REQUEST_URI} !^/api
+RewriteCond %{REQUEST_URI} !^/storage
+RewriteRule ^(.*)$ http://127.0.0.1:3001/$1 [P,L]
 
 # Security Headers
 <IfModule mod_headers.c>
