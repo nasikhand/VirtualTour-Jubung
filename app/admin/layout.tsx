@@ -7,7 +7,7 @@ import { Toaster } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import SidebarAdmin from "@/components/admin/sidebar-admin";
 
-const SIGN_IN_PATHS = ["/admin/sign-in", "/admin/virtual-tour/sign-in"];
+const SIGN_IN_PATHS = ["/admin/sign-in"];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -20,8 +20,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isSignInPage) {
-      // 📍 Sesuaikan path sign-in yang kamu pakai (kamu pakai /admin/virtual-tour/sign-in)
-      router.replace("/admin/virtual-tour/sign-in");
+      // ✅ PERBAIKAN: Redirect ke path yang benar
+      router.replace("/admin/sign-in");
     }
   }, [isLoading, isAuthenticated, isSignInPage, router]);
 
@@ -48,8 +48,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <SidebarAdmin />
-      <main className="lg:pl-72">
-        <div className="px-4 py-4 sm:px-6 lg:px-8">{children}</div>
+      <main className="lg:pl-64">
+        <div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 pt-16 lg:pt-4">{children}</div>
       </main>
       <Toaster position="top-center" />
     </div>

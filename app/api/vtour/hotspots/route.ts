@@ -7,7 +7,19 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const qs = searchParams.toString();
-    const url = qs ? `${API_BASE}/api/vtour/hotspots?${qs}` : `${API_BASE}/api/vtour/hotspots`;
+    
+    // Jika ada parameter scene_id, gunakan endpoint scenes.hotspots
+    const sceneId = searchParams.get('scene_id');
+    let url: string;
+    
+    if (sceneId) {
+      url = `${API_BASE}/api/vtour/scenes/${sceneId}/hotspots`;
+    } else {
+      // Jika tidak ada scene_id, gunakan endpoint hotspots baru
+      url = `${API_BASE}/api/vtour/hotspots`;
+    }
+    
+    console.log('Fetching hotspots from:', url); // Debug log
 
     const res = await fetch(url, {
       method: "GET",
@@ -18,6 +30,8 @@ export async function GET(req: NextRequest) {
     if (res.status === 204) return new NextResponse(null, { status: 204 });
 
     const data = await res.json().catch(() => ({}));
+    console.log('Hotspots response:', data); // Debug log
+    
     if (!res.ok) {
       console.error("Laravel Error (GET hotspots):", data);
       return NextResponse.json({ message: "Gagal mengambil daftar hotspots dari backend" }, { status: res.status });

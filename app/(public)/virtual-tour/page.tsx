@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import VirtualTourClientPage from '@/components/virtual-tour/VirtualTourClientPage';
 import { VtourMenu, Scene } from '@/types/virtual-tour';
+import { addCacheBuster, checkImageExists } from '@/utils/cacheUtils';
 
 export default function VirtualTourPage() {
   const [menus, setMenus] = useState<VtourMenu[]>([]);
@@ -38,10 +39,44 @@ export default function VirtualTourPage() {
 
         if (settingsResponse.ok) {
           const settingsJson = await settingsResponse.json();
+          console.log('🔍 Settings response:', settingsJson); // Debug log
+          console.log('🔍 Settings data keys:', Object.keys(settingsJson?.data || {})); // Debug keys
+          
           if (settingsJson?.data?.vtour_logo_url) {
-            settingsJson.data.vtour_logo_url = `${settingsJson.data.vtour_logo_url}?t=${Date.now()}`;
+            console.log('🔍 Logo URL found:', settingsJson.data.vtour_logo_url); // Debug logo URL
+            
+            // ✅ Gunakan public storage API (tidak perlu authentication)
+            const logoPath = settingsJson.data.vtour_logo_url;
+            
+            // Hapus query parameter lama jika ada
+            const cleanLogoPath = logoPath.split('?')[0];
+            
+            // Convert ke public storage URL
+            const finalLogoUrl = `/api/vtour/public/storage/${encodeURI(cleanLogoPath)}?t=${Date.now()}`;
+            
+            console.log('🔍 Clean logo path:', cleanLogoPath); // Debug clean path
+            console.log('🔍 Public storage URL:', finalLogoUrl); // Debug public URL
+            
+            // Verifikasi image exists
+            checkImageExists(finalLogoUrl).then(exists => {
+              if (!exists) {
+                console.warn('⚠️ Logo image tidak dapat diakses:', finalLogoUrl);
+                // Clear logo jika tidak bisa diakses
+                setSettings((prev: any) => ({
+                  ...prev,
+                  vtour_logo_url: null
+                }));
+              }
+            });
+            
+            // Update settings dengan final URL
+            settingsJson.data.vtour_logo_url = finalLogoUrl;
+          } else {
+            console.log('🔍 No logo URL found in response'); // Debug no logo
           }
           setSettings(settingsJson.data || {});
+        } else {
+          console.error('❌ Settings response not ok:', settingsResponse.status, settingsResponse.statusText);
         }
       } catch (err) {
         console.error('Error loading virtual tour:', err);

@@ -86,7 +86,10 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
   }, []);
 
   const initializeViewer = useCallback(() => {
+    console.log('Initializing viewer with:', { isScriptLoaded, imageUrl, hasRef: !!panoramaRef.current });
+    
     if (!isScriptLoaded || !panoramaRef.current || !imageUrl) {
+      console.log('Cannot initialize viewer:', { isScriptLoaded, hasRef: !!panoramaRef.current, imageUrl });
       return;
     }
 
@@ -98,6 +101,7 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Starting to initialize Pannellum viewer with image:', imageUrl);
 
       if (viewerRef.current) {
         try {
@@ -118,19 +122,22 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
         showZoomCtrl: false, // Disable zoom controls
         showFullscreenCtrl: false, // Disable fullscreen control
         draggable: true,
-        hotSpots: hotspots?.map(h => ({
-          id: String(h.id),
-          pitch: h.pitch,
-          yaw: h.yaw,
-          text: h.label,
-          cssClass: `custom-hotspot ${h.type}-hotspot hotspot-icon-${h.icon_name || 'default'}`,
-          clickHandlerFunc: onHotspotClick ? () => onHotspotClick(h) : undefined,
-        })) || [],
+        hotSpots: hotspots?.map(h => {
+          return {
+            id: String(h.id),
+            pitch: h.pitch,
+            yaw: h.yaw,
+            text: h.label,
+            cssClass: `custom-hotspot ${h.type}-hotspot hotspot-icon-${h.icon_name || 'default'}`,
+            clickHandlerFunc: onHotspotClick ? () => onHotspotClick(h) : undefined,
+          };
+        }) || [],
       });
 
       viewerRef.current = viewer;
 
       viewer.on('load', () => {
+        console.log('Pannellum viewer loaded successfully');
         setIsLoading(false);
         setError(null);
         if (onLoad) {
@@ -139,26 +146,50 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
       });
 
       viewer.on('error', (err: any) => {
+        console.error('Pannellum error:', err);
         setIsLoading(false);
         setError('Failed to load panorama image');
-        console.error('Pannellum error:', err);
+      });
+
+      viewer.on('imageLoadError', (err: any) => {
+        console.error('Pannellum image load error:', err);
+        setError('Failed to load panorama image');
+        setIsLoading(false);
       });
 
       if (onViewerClick) {
-        viewer.on('mousedown', (event: MouseEvent) => {
+        console.log('🎯 PannellumViewer: Setting up click handler');
+        viewer.on('click', (event: MouseEvent) => {
           const target = event.target as HTMLElement;
-          if (target.closest('.pnlm-hotspot, .pnlm-ctrl')) return;
+          console.log('🎯 Pannellum click event triggered', { 
+            target: target.tagName, 
+            className: target.className,
+            timestamp: new Date().toISOString()
+          });
           
+          // Ignore clicks on hotspots or controls
+          if (target.closest('.pnlm-hotspot, .pnlm-ctrl')) {
+            console.log('❌ Click on hotspot or control, ignoring');
+            return;
+          }
+          
+          // Simple click handling - no double click detection for now
           try {
             const coords = viewer.mouseEventToCoords(event);
+            console.log('🎯 Click coordinates:', coords);
             if (coords && Array.isArray(coords) && coords.length >= 2) {
               const [pitch, yaw] = coords;
+              console.log('🎯 Calling onViewerClick with:', { pitch, yaw });
               onViewerClick({ pitch, yaw });
+            } else {
+              console.warn('⚠️ Invalid coordinates from mouseEventToCoords:', coords);
             }
           } catch (err) {
-            console.error('Click error:', err);
+            console.error('❌ Click error:', err);
           }
         });
+      } else {
+        console.log('⚠️ PannellumViewer: No onViewerClick handler provided');
       }
 
       if (onCameraUpdate) {
@@ -190,14 +221,40 @@ const PannellumViewer = forwardRef<PannellumViewerRef, Props>(function Pannellum
     initializeViewer();
   }, [initializeViewer]);
 
+  // Cleanup effect to prevent memory leaks and DOM errors
   useEffect(() => {
     return () => {
-      if (viewerRef.current) {
-        try {
-          viewerRef.current.destroy();
-        } catch (err) {
-          console.warn('Failed to destroy viewer:', err);
+      // Cleanup when component unmounts
+      try {
+        if (viewerRef.current) {
+          console.log('Cleaning up Pannellum viewer');
+          // Remove all hotspots first
+          try {
+            const existingHotspots = viewerRef.current.getHotSpots();
+            existingHotspots.forEach((hotspot: any) => {
+              try {
+                viewerRef.current!.removeHotSpot(hotspot.id);
+              } catch (error) {
+                console.warn('Failed to remove hotspot during cleanup:', error);
+              }
+            });
+          } catch (error) {
+            console.warn('Failed to get hotspots during cleanup:', error);
+          }
+          
+          // Destroy the viewer
+          try {
+            if (typeof viewerRef.current.destroy === 'function') {
+              viewerRef.current.destroy();
+            }
+          } catch (error) {
+            console.warn('Failed to destroy viewer during cleanup:', error);
+          }
+          
+          viewerRef.current = null;
         }
+      } catch (error) {
+        console.warn('Cleanup error:', error);
       }
     };
   }, []);

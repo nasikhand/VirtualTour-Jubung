@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
-import { Scene } from '@/types/virtual-tour'
-import Link from 'next/link'
-import PannellumViewer from './PannellumViewer'
-import RenameSpotModal from './RenameSpotModal'
-import AdjustRotationModal from './AdjustRotationModal'
-import DeleteConfirmationModal from './DeleteConfirmationModal'
-import PlacementEditor from './PlacementEditor'
-import { Settings, Camera, MapPin, Trash2, Pencil, ArrowLeft } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { Scene } from '@/types/virtual-tour';
+import Link from 'next/link';
+import PannellumViewer from './PannellumViewer';
+import RenameSpotModal from './RenameSpotModal';
+import AdjustRotationModal from './AdjustRotationModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import InfoHotspotContainer from './InfoHotspotContainer';
+import { Settings, Camera, MapPin, Trash2, Pencil, ArrowLeft } from 'lucide-react';
+import { vtourAPI } from '@/lib/api-client';
 
 // Kita tidak perlu memuat script Pannellum di sini lagi
 // karena PannellumViewer sudah menanganinya
@@ -61,9 +62,13 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
     }
   }
 
-  // Jika mode penempatan aktif, render komponen PlacementEditor
+  // Jika mode penempatan aktif, render komponen InfoHotspotContainer
   if (isPlacementMode) {
-    return <PlacementEditor scene={scene} onExit={() => setIsPlacementMode(false)} />
+    return (
+      <InfoHotspotContainer 
+        scene={scene}
+      />
+    )
   }
 
   return (
@@ -142,17 +147,16 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
       <AdjustRotationModal
         isOpen={isRotationModalOpen}
         onClose={() => setIsRotationModalOpen(false)}
-        currentPosition={currentPosition}
         onSave={handleSetDefaultView}
-        // ✅ PERBAIKAN: Tambahkan prop imageUrl di sini
-        imageUrl={imageUrl} 
+        currentPosition={currentPosition}
+        imageUrl={imageUrl}
       />
-      
-      <DeleteConfirmationModal 
-        isOpen={isDeleteModalOpen} 
-        onClose={() => setIsDeleteModalOpen(false)} 
-        onConfirm={handleDeleteScene} 
-        isLoading={isDeleting} 
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteScene}
+        isLoading={isDeleting}
       />
     </>
   )

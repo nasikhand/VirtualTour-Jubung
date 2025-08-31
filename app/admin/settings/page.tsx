@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { User, Lock, Save, Eye, EyeOff, LogOut, Upload } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from 'react';
+import { Eye, EyeOff, X, Settings, User, Lock, LogOut, Edit3 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import LogoutConfirmationModal from '@/components/ui/logout-confirmation-modal';
 
 export default function AdminSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -12,176 +13,312 @@ export default function AdminSettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [currentLogo, setCurrentLogo] = useState<string | null>(null);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [adminInfo, setAdminInfo] = useState({ name: '', email: '' });
+  const [adminInfo, setAdminInfo] = useState({ username: '', name: '' });
+  const [newUsername, setNewUsername] = useState('');
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    // Load admin info
+    // Load admin info dari API dengan token
     const fetchAdminInfo = async () => {
       try {
-        const response = await fetch('/api/admin/profile');
+        const token = localStorage.getItem('vtourAdminToken');
+        if (!token) {
+          console.log('Token tidak ditemukan, menggunakan username dari localStorage');
+          const storedUsername = localStorage.getItem('vtourAdminUsername') || 'Admin';
+          setAdminInfo({ 
+            username: storedUsername, 
+            name: storedUsername 
+          });
+          setNewUsername(storedUsername);
+          return;
+        }
+
+        const response = await fetch('/api/vtour-admin/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (response.ok) {
           const data = await response.json();
-          setAdminInfo(data.data || { name: 'Admin', email: 'admin@example.com' });
+          console.log('Profile data from API:', data);
+          setAdminInfo({ 
+            username: data.username || 'Admin', 
+            name: data.name || data.username || 'Admin' 
+          });
+          setNewUsername(data.username || 'Admin');
+          
+          // Update localStorage dengan data terbaru
+          if (data.username) {
+            localStorage.setItem('vtourAdminUsername', data.username);
+          }
+        } else {
+          console.log('Failed to fetch profile, using localStorage');
+          const storedUsername = localStorage.getItem('vtourAdminUsername') || 'Admin';
+          setAdminInfo({ 
+            username: storedUsername, 
+            name: storedUsername 
+          });
+          setNewUsername(storedUsername);
         }
       } catch (error) {
         console.error('Failed to load admin info:', error);
-      }
-    };
-
-    const fetchCurrentLogo = async () => {
-      try {
-        const response = await fetch('/api/vtour/settings', {
-          cache: 'no-store'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data && data.data.vtour_logo_url) {
-            // Add cache-busting parameter to prevent browser caching
-            setCurrentLogo(`${data.data.vtour_logo_url}?t=${Date.now()}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching current logo:', error);
+        const storedUsername = localStorage.getItem('vtourAdminUsername') || 'Admin';
+        setAdminInfo({ username: storedUsername, name: storedUsername });
+        setNewUsername(storedUsername);
       }
     };
 
     fetchAdminInfo();
-    fetchCurrentLogo();
   }, []);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!newUsername || !currentPassword) {
+      toast.error('Username dan password lama wajib diisi');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast.error('Password baru dan konfirmasi password tidak cocok');
       return;
     }
     
-    if (newPassword.length < 6) {
-      toast.error('Password baru minimal 6 karakter');
+    if (newPassword.length < 4) {
+      toast.error('Password baru minimal 4 karakter');
       return;
     }
 
     setIsLoading(true);
+    
+    // Debug: log data yang akan dikirim
+    const requestData = {
+      username: newUsername,
+      current_password: currentPassword,
+      new_password: newPassword,
+      new_password_confirmation: confirmPassword
+    };
+    console.log('Sending update password request:', requestData);
+    
     try {
-      const response = await fetch('/api/admin/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword,
-          new_password_confirmation: confirmPassword
-        })
+      // Ambil token dari localStorage
+      const token = localStorage.getItem('vtourAdminToken');
+      if (!token) {
+        toast.error('Token tidak ditemukan, silakan login ulang');
+        return;
+      }
+
+      const response = await fetch('/api/vtour-admin/update-profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData)
       });
 
       const data = await response.json();
+      console.log('Response:', data);
       
       if (response.ok) {
         toast.success('Password berhasil diubah');
+        // Update username di localStorage jika berubah
+        if (newUsername !== adminInfo.username) {
+          localStorage.setItem('vtourAdminUsername', newUsername);
+          setAdminInfo(prev => ({ ...prev, username: newUsername, name: newUsername }));
+        }
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        toast.error(data.message || 'Gagal mengubah password');
+        if (data.message?.toLowerCase().includes('password salah')) {
+          toast.error('Password lama salah');
+        } else {
+          toast.error(data.message || 'Gagal mengubah password');
+        }
       }
     } catch (error) {
+      console.error('Update password error:', error);
       toast.error('Terjadi kesalahan saat mengubah password');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validasi tipe file
-      if (!file.type.startsWith('image/')) {
-        toast.error('File harus berupa gambar');
-        return;
-      }
-      
-      // Validasi ukuran file (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Ukuran file maksimal 5MB');
-        return;
-      }
-      
-      setLogoFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleUploadLogo = async () => {
-    if (!logoFile) {
-      toast.error('Pilih file logo terlebih dahulu');
+  const handleUpdateUsername = async () => {
+    if (!newUsername.trim()) {
+      toast.error('Username tidak boleh kosong');
       return;
     }
 
-    setIsUploadingLogo(true);
-    try {
-      const formData = new FormData();
-      formData.append('logo', logoFile);
+    if (!currentPassword) {
+      toast.error('Password saat ini wajib diisi');
+      return;
+    }
 
-      const response = await fetch('/api/vtour/settings/logo', {
-        method: 'POST',
-        body: formData
+    setIsLoading(true);
+    
+    // Debug: log data yang akan dikirim
+    const requestData = {
+      username: newUsername,
+      current_password: currentPassword,
+      new_password: null,
+      new_password_confirmation: null
+    };
+    console.log('Sending update username request:', requestData);
+    
+    try {
+      // Ambil token dari localStorage
+      const token = localStorage.getItem('vtourAdminToken');
+      if (!token) {
+        toast.error('Token tidak ditemukan, silakan login ulang');
+        return;
+      }
+
+      const response = await fetch('/api/vtour-admin/update-profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData)
       });
 
       const data = await response.json();
+      console.log('Response:', data);
       
       if (response.ok) {
-        toast.success('Logo berhasil diupload');
-        // Add cache-busting parameter to prevent browser caching
-        if (data.data && data.data.url) {
-          setCurrentLogo(`${data.data.url}?t=${Date.now()}`);
-        }
-        setLogoFile(null);
-        setLogoPreview(null);
-        // Reset file input
-        const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-        // Refresh current logo from server to ensure consistency
-        await fetchCurrentLogo();
+        toast.success('Username berhasil diubah');
+        // Update username di localStorage
+        localStorage.setItem('vtourAdminUsername', newUsername);
+        setAdminInfo(prev => ({ ...prev, username: newUsername, name: newUsername }));
+        setShowUsernameModal(false);
+        setCurrentPassword('');
       } else {
-        toast.error(data.message || 'Gagal mengupload logo');
+        if (data.message?.toLowerCase().includes('password salah')) {
+          toast.error('Password salah');
+        } else {
+          toast.error(data.message || 'Gagal mengubah username');
+        }
       }
     } catch (error) {
-      toast.error('Terjadi kesalahan saat mengupload logo');
+      console.error('Update username error:', error);
+      toast.error('Terjadi kesalahan saat mengubah username');
     } finally {
-      setIsUploadingLogo(false);
+      setIsLoading(false);
     }
   };
 
-  const handleRemoveLogo = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
   };
 
-  const handleLogout = async () => {
-    if (confirm('Apakah Anda yakin ingin logout?')) {
-      try {
-        await fetch('/api/admin/logout', { method: 'POST' });
-        window.location.href = '/admin/login';
-      } catch (error) {
-        toast.error('Gagal logout');
-      }
-    }
+  const confirmLogout = () => {
+    // Hapus token dan redirect seperti di sidebar
+    localStorage.removeItem("vtourAdminToken");
+    localStorage.removeItem("vtourAdminTokenTimestamp");
+    localStorage.removeItem("vtourAdminUsername");
+    toast.success('Berhasil logout');
+    window.location.href = '/admin/sign-in';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Username Edit Modal */}
+      {showUsernameModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Edit Username</h3>
+              <button
+                onClick={() => setShowUsernameModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Username Baru</label>
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200"
+                placeholder="Masukkan username baru"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Password Saat Ini</label>
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-400 transition-all duration-200 pr-12"
+                  placeholder="Masukkan password saat ini"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-red-600 transition-colors"
+                >
+                  {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUsernameModal(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleUpdateUsername}
+                disabled={isLoading}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {isLoading ? 'Mengubah...' : 'Simpan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="text-red-600" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Konfirmasi Logout</h3>
+            <p className="text-gray-600 mb-6">Apakah Anda yakin ingin keluar dari sistem?</p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+              >
+                Ya, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="text-center mb-12">
@@ -197,6 +334,18 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="max-w-6xl mx-auto">
+          {/* Debug Info - Hanya tampilkan di development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-yellow-800 mb-2">🔍 Debug Info (Development Only)</h3>
+              <div className="text-xs text-yellow-700 space-y-1">
+                <p>Username dari localStorage: {localStorage.getItem('vtourAdminUsername') || 'Tidak ada'}</p>
+                <p>Token tersedia: {localStorage.getItem('vtourAdminToken') ? 'Ya' : 'Tidak'}</p>
+                <p>API URL: {process.env.NEXT_PUBLIC_API_URL || 'Tidak diset'}</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Profile Info Card */}
             <div className="lg:col-span-1">
@@ -211,16 +360,25 @@ export default function AdminSettingsPage() {
                 
                 <div className="space-y-6">
                   <div className="text-center">
-                    <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Nama</label>
+                    <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Username</label>
                     <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200">
-                      <p className="text-lg font-semibold text-gray-800">{adminInfo.name || 'Admin'}</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <p className="text-lg font-semibold text-gray-800">{adminInfo.username || 'Admin'}</p>
+                        <button
+                          onClick={() => setShowUsernameModal(true)}
+                          className="p-2 hover:bg-blue-100 rounded-full transition-colors"
+                          title="Edit Username"
+                        >
+                                                      <Edit3 size={16} className="text-blue-600" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   
                   <div className="text-center">
-                    <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Email</label>
-                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200">
-                      <p className="text-lg font-semibold text-gray-800">{adminInfo.email || 'admin@example.com'}</p>
+                    <label className="block text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</label>
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200">
+                      <p className="text-lg font-semibold text-green-800">Aktif</p>
                     </div>
                   </div>
                 </div>
@@ -271,9 +429,9 @@ export default function AdminSettingsPage() {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-400 transition-all duration-200 pr-12 bg-gradient-to-r from-gray-50 to-green-50"
-                          placeholder="Password baru (min. 6 karakter)"
+                          placeholder="Password baru (min. 4 karakter)"
                           required
-                          minLength={6}
+                          minLength={4}
                         />
                         <button
                           type="button"
@@ -295,7 +453,7 @@ export default function AdminSettingsPage() {
                           className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-200 pr-12 bg-gradient-to-r from-gray-50 to-blue-50"
                           placeholder="Konfirmasi password baru"
                           required
-                          minLength={6}
+                          minLength={4}
                         />
                         <button
                           type="button"
@@ -314,107 +472,11 @@ export default function AdminSettingsPage() {
                       disabled={isLoading}
                       className="bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 px-8 rounded-xl hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold text-lg"
                     >
-                      <Save className="mr-3" size={24} />
+                                              <Settings className="mr-3" size={24} />
                       {isLoading ? 'Mengubah Password...' : 'Perbarui Password'}
                     </button>
                   </div>
                 </form>
-              </div>
-            </div>
-          </div>
-
-          {/* Logo Management Section */}
-          <div className="mt-12">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 hover:shadow-2xl transition-all duration-300">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Upload className="text-white" size={24} />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Logo Virtual Tour</h2>
-                <p className="text-gray-600">Kelola logo yang akan ditampilkan di virtual tour</p>
-                <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full mx-auto mt-3"></div>
-              </div>
-              
-              {/* Current and Preview Logo Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                {/* Current Logo */}
-                {currentLogo && (
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-4">Logo Saat Ini</h3>
-                    <div className="w-40 h-40 mx-auto border-4 border-gray-200 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-purple-50 flex items-center justify-center shadow-lg">
-                      <img 
-                        src={currentLogo} 
-                        alt="Current Logo" 
-                        className="max-w-full max-h-full object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling!.style.display = 'flex';
-                        }}
-                      />
-                      <div className="hidden items-center justify-center text-gray-400 text-sm">
-                        Logo tidak dapat dimuat
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Logo Preview */}
-                {logoPreview && (
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-4">Preview Logo Baru</h3>
-                    <div className="w-40 h-40 mx-auto border-4 border-green-200 rounded-2xl overflow-hidden bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center shadow-lg">
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo Preview" 
-                        className="max-w-full max-h-full object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-          
-              {/* Logo Upload Form */}
-              <div className="space-y-6">
-                <div className="text-center">
-                  <label htmlFor="logo-upload" className="block text-lg font-semibold text-gray-700 mb-4">
-                    Pilih Logo Baru
-                  </label>
-                  <div className="relative inline-block">
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="bg-gradient-to-r from-purple-100 to-indigo-100 border-2 border-dashed border-purple-300 rounded-2xl p-8 hover:from-purple-200 hover:to-indigo-200 transition-all duration-300 cursor-pointer">
-                      <Upload className="mx-auto text-purple-500 mb-4" size={32} />
-                      <p className="text-purple-700 font-semibold mb-2">Klik untuk memilih file</p>
-                      <p className="text-sm text-purple-600">Format: JPG, PNG, GIF • Maksimal 5MB</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={handleUploadLogo}
-                    disabled={!logoFile || isUploadingLogo}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold flex items-center"
-                  >
-                    <Upload className="mr-2" size={20} />
-                    {isUploadingLogo ? 'Mengupload...' : 'Upload Logo'}
-                  </button>
-                  
-                  {logoFile && (
-                    <button
-                      onClick={handleRemoveLogo}
-                      className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-8 py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold"
-                    >
-                      Batal
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
@@ -433,7 +495,7 @@ export default function AdminSettingsPage() {
               
               <div className="flex justify-center">
                 <button
-                  onClick={handleLogout}
+                  onClick={() => setShowLogoutConfirm(true)}
                   className="bg-gradient-to-r from-red-500 to-orange-600 text-white py-4 px-8 rounded-xl hover:from-red-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold text-lg flex items-center"
                 >
                   <LogOut className="mr-3" size={24} />
@@ -444,6 +506,17 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmationModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari sistem? Semua data yang belum disimpan akan hilang."
+        confirmText="Ya, Logout"
+        cancelText="Batal"
+      />
     </div>
   );
 }

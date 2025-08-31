@@ -1,19 +1,27 @@
-import { getSceneById } from '@/lib/data/virtual-tour';
-import LinkHotspotEditor from '@/components/virtual-tour/LinkHotspotEditor'; // Komponen yang akan kita isi
-import { notFound } from 'next/navigation';
-import { Scene } from '@/types/virtual-tour';
+import LinkHotspotContainer from '@/components/virtual-tour/LinkHotspotContainer';
+import { getScene } from '@/lib/api-client'
 
-export default async function EditSceneLinksPage({ params }: { params: { id: string } }) {
-  const sceneId = params.id;
+interface EditLinksPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function EditLinksPage({ params }: EditLinksPageProps) {
+  const { id } = await params;
   
-  // Ambil data scene tunggal dari server
-  const response = await getSceneById(sceneId);
-  const scene: Scene | null = response?.data || response;
-
+  // Fetch scene data
+  const scene = await getScene(id);
+  
   if (!scene) {
-    return notFound();
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Scene tidak ditemukan</h1>
+          <p className="text-gray-600">Scene dengan ID {id} tidak dapat ditemukan.</p>
+        </div>
+      </div>
+    );
   }
 
-  // Render komponen LinkHotspotEditor dengan data scene yang sesuai
-  return <LinkHotspotEditor scene={scene} />;
+  // Render komponen LinkHotspotContainer dengan data scene yang sesuai
+  return <LinkHotspotContainer scene={scene} />;
 }
