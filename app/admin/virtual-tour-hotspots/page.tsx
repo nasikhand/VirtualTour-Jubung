@@ -94,8 +94,11 @@ export default function VirtualTourHotspotsPage() {
 
       if (settingsRes.ok) {
         const settingsData = await settingsRes.json();
-        if (settingsData.data?.vtour_logo_url) {
-          setPreviewImage(settingsData.data.vtour_logo_url);
+        if (settingsData.data?.vtour_logo_path) {
+          // ✅ Gunakan public storage API untuk preview logo
+          const logoPath = settingsData.data.vtour_logo_path;
+          const publicLogoUrl = `/api/vtour/public/storage/${logoPath}?t=${Date.now()}`;
+          setPreviewImage(publicLogoUrl);
         }
       }
 
@@ -159,40 +162,7 @@ export default function VirtualTourHotspotsPage() {
     }
   };
 
-  // Fungsi untuk menangani upload gambar logo
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
 
-    // Validasi sisi client
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    const maxSize = 1 * 1024 * 1024; // 1MB
-    if (!allowedTypes.includes(file.type)) return toast.error('Format harus PNG, JPG, atau WEBP.');
-    if (file.size > maxSize) return toast.error('Ukuran file maksimal 1MB.');
-
-    const formData = new FormData();
-    formData.append('logo', file);
-
-    const toastId = toast.loading("Mengupload logo...");
-    try {
-      const res = await fetch('/api/vtour/settings/logo', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Gagal upload logo ke server.');
-
-      const result = await res.json();
-      // Konsistensi dengan format loading awal
-      if (result.data?.vtour_logo_path) {
-        setPreviewImage(`http://localhost:8000/storage/${result.data.vtour_logo_path}`);
-      } else if (result.data?.url) {
-        setPreviewImage(result.data.url);
-      }
-      toast.success("Logo berhasil diupload!", { id: toastId });
-    } catch (error) {
-      toast.error("Gagal mengupload logo.", { id: toastId });
-    }
-  };
 
   // Fungsi untuk menangani akhir dari proses drag-and-drop
   const handleDragEnd = (event: DragEndEvent) => {
@@ -247,6 +217,78 @@ export default function VirtualTourHotspotsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus]);
+
+  // Fungsi untuk menangani upload gambar logo
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validasi sisi client (tidak ada perubahan)
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (!allowedTypes.includes(file.type)) return toast.error('Format harus PNG, JPG, atau WEBP.');
+    if (file.size > maxSize) return toast.error('Ukuran file maksimal 2MB.');
+
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const toastId = toast.loading("Mengupload logo...");
+    try {
+      // Memanggil proxy Next.js (tidak ada perubahan)
+      const res = await fetch('/api/vtour/settings/logo', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('vtourAdminToken')}`
+        },
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Gagal mem-parsing respons error' }));
+        throw new Error(errorData.message || errorData.error || `HTTP ${res.status}: Gagal upload logo.`);
+      }
+
+      const result = await res.json();
+      
+      // --- MULAI PERUBAHAN ---
+
+      // PERUBAHAN 1: Cari `vtour_logo_path` (path relatif) dari backend, bukan URL lengkap.
+      let logoPath = null;
+      if (result.data?.vtour_logo_path) {
+        logoPath = result.data.vtour_logo_path;
+      } else if (result.vtour_logo_path) {
+        logoPath = result.vtour_logo_path;
+      } else if (result.data?.path) {
+        logoPath = result.data.path;
+      } else if (result.path) {
+        logoPath = result.path;
+      }
+      
+      if (logoPath) {
+        // ✅ PERUBAHAN: Gunakan PUBLIC storage API (tidak perlu authentication)
+        // Ini akan membuat browser memanggil: `http://localhost:3001/api/vtour/public/storage/vtour/logos/namafile.png`
+        const finalUrl = `/api/vtour/public/storage/${logoPath}?t=${Date.now()}`;
+        
+        setPreviewImage(finalUrl);
+        toast.success("Logo berhasil diupload!", { id: toastId });
+      } else {
+        console.error('❌ Path logo tidak ditemukan di respons:', result);
+        throw new Error('Respons tidak mengandung path logo yang valid');
+      }
+      // --- SELESAI PERUBAHAN ---
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Gagal mengupload logo.";
+      toast.error(errorMessage, { id: toastId });
+    } finally {
+      event.target.value = ''; // Mengosongkan input file
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setPreviewImage('/placeholder-logo.svg');
+    toast.success('Logo berhasil dihapus!');
+  };
 
   return (
     <>
@@ -325,31 +367,31 @@ export default function VirtualTourHotspotsPage() {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Modern Menu Preview */}
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-blue-600" />
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   Preview Menu
                 </h3>
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-                  <div className="flex flex-wrap gap-3">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600">
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
                     {isLoading ? (
-                      <div className="flex gap-3">
+                      <div className="flex gap-2 sm:gap-3">
                         {[1, 2, 3].map(i => (
-                          <div key={i} className="bg-gray-300 dark:bg-gray-600 animate-pulse px-4 py-2 rounded-full h-8 w-24"></div>
+                          <div key={i} className="bg-gray-300 dark:bg-gray-600 animate-pulse px-3 sm:px-4 py-1.5 sm:py-2 rounded-full h-6 sm:h-8 w-16 sm:w-24"></div>
                         ))}
                       </div>
                     ) : menus.map((menu, index) => (
-                      <div key={menu.id} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
-                        <span className="bg-white bg-opacity-20 px-2 py-1 rounded-full text-xs mr-2">{index + 1}</span>
-                        {menu.scene_name}
+                      <div key={menu.id} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                        <span className="bg-white bg-opacity-20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs mr-1.5 sm:mr-2">{index + 1}</span>
+                        {menu.scene?.name || menu.name}
                       </div>
                     ))}
                     {!isLoading && menus.length === 0 && (
                       <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 italic">
-                        <AlertCircle className="w-4 h-4" />
-                        Belum ada menu yang ditambahkan
+                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm">Belum ada menu yang ditambahkan</span>
                       </div>
                     )}
                   </div>
@@ -357,61 +399,74 @@ export default function VirtualTourHotspotsPage() {
               </div>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
                 {/* PREVIEW SECTION */}
-                <div className="lg:col-span-1">
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-700 p-4 rounded-xl shadow-lg">
-                    <div className="group relative aspect-[4/3] w-full rounded-lg bg-black/20 overflow-hidden mb-4">
-                      <img
-                        src={previewImage || '/placeholder-logo.svg'}
-                        alt="Preview Logo"
-                        className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                <div className="xl:col-span-1">
+                  {/* Logo Preview Section */}
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Logo Virtual Tour</h3>
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="p-2 bg-white/90 rounded-full text-gray-800 hover:bg-white transition-colors"
-                          title="Ganti Logo"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                         >
-                          <Upload size={18} />
+                          Upload Logo
                         </button>
-                        <button
-                          onClick={() => setPreviewImage('/placeholder-logo.svg')}
-                          className="p-2 bg-white/90 rounded-full text-gray-800 hover:bg-white transition-colors"
-                          title="Hapus Logo"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                                                 {previewImage && previewImage !== '/placeholder-logo.svg' && (
+                           <button
+                             onClick={() => {
+                               setPreviewImage('/placeholder-logo.svg');
+                               toast.success('Logo berhasil dihapus!');
+                             }}
+                             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                           >
+                             Hapus
+                           </button>
+                         )}
                       </div>
-                      <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
                     </div>
-                    <p className="text-xs text-gray-300 text-center mb-3">Maks. 1MB. Format: PNG, JPG, WEBP</p>
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-white mb-2">Preview Menu:</h3>
-                      {menus.length > 0 ? (
-                        menus.map(menu => (
-                          <div key={menu.id} className="text-center text-white font-medium p-2 text-sm bg-white/10 rounded-lg backdrop-blur-sm">
-                            {menu.name}
+                    
+                    <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
+                      <div className="w-32 h-32 mx-auto relative">
+                                                 <img
+                           src={previewImage || '/placeholder-logo.svg'}
+                           alt="Preview Logo"
+                           className="w-full h-full object-contain transition-opacity duration-300"
+                           onError={(e) => {
+                             console.warn('Logo image failed to load:', previewImage);
+                             e.currentTarget.src = '/placeholder-logo.svg';
+                           }}
+                         />
+                        {previewImage === '/placeholder-logo.svg' && (
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-xs text-center">
+                            Logo belum diupload
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-center text-sm text-gray-400 p-4 border border-dashed border-gray-600 rounded-lg">
-                          Menu akan tampil di sini
-                        </div>
-                      )}
+                        )}
+                      </div>
+                      <p className="text-center text-sm text-gray-600 mt-2">
+                        Format: PNG, JPG, WEBP • Maksimal 2MB
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* MODERN MENU LIST SECTION */}
-                <div className="lg:col-span-2">
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 min-h-[400px] shadow-lg">
+                <div className="xl:col-span-2">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 min-h-[400px] shadow-lg">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg">
                         <List className="w-5 h-5 text-white" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Pengaturan Menu</h3>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Pengaturan Menu</h3>
                     </div>
 
                     {isLoading ? (
@@ -423,7 +478,7 @@ export default function VirtualTourHotspotsPage() {
                     ) : (
                       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={menus} strategy={verticalListSortingStrategy}>
-                          <div className="space-y-4">
+                          <div className="space-y-3 sm:space-y-4">
                             {menus.map((menu) => (
                               <SortableMenuItem key={menu.id} menu={menu} onDelete={handleDeleteClick} />
                             ))}
@@ -433,29 +488,29 @@ export default function VirtualTourHotspotsPage() {
                     )}
 
                     {!isLoading && menus.length === 0 && (
-                      <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                      <div className="flex flex-col items-center justify-center h-48 sm:h-64 text-gray-500 dark:text-gray-400">
                         <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
-                          <Settings size={48} className="opacity-50" />
+                          <Settings size={40} className="opacity-50" />
                         </div>
-                        <p className="text-xl font-semibold mb-2">Belum ada menu</p>
-                        <p className="text-sm text-center max-w-md">Tambahkan menu pertama untuk memulai navigasi virtual tour Anda</p>
+                        <p className="text-lg sm:text-xl font-semibold mb-2 text-center">Belum ada menu</p>
+                        <p className="text-sm text-center max-w-md px-4">Tambahkan menu pertama untuk memulai navigasi virtual tour Anda</p>
                       </div>
                     )}
                   </div>
 
                   {!isLoading && menus.length > 0 && (
-                    <div className="mt-6 flex justify-end gap-4">
+                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                       <button
                         onClick={() => fetchData()}
                         disabled={!hasOrderChanged || isSaving}
-                        className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 disabled:transform-none"
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 font-semibold disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 disabled:transform-none text-sm sm:text-base"
                       >
                         Reset
                       </button>
                       <button
                         onClick={handleSaveOrder}
                         disabled={!hasOrderChanged || isSaving}
-                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-semibold disabled:opacity-50 flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-semibold disabled:opacity-50 flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none text-sm sm:text-base"
                       >
                         {isSaving && hasOrderChanged && <LoaderCircle className="animate-spin" size={18} />}
                         Simpan Urutan

@@ -40,8 +40,8 @@ export default function ReactHotspot({ hotspot, onClick }: Props) {
   if (!position || !position.isVisible) return null;
 
   const hotspotClass = hotspot.type === 'link' 
-    ? `custom-link-hotspot hotspot-icon-${hotspot.icon_name || 'default'}` 
-    : 'custom-info-hotspot';
+    ? `custom-hotspot link-hotspot hotspot-icon-${hotspot.icon_name || 'default'}` 
+    : `custom-hotspot info-hotspot hotspot-icon-${hotspot.icon_name || 'default'}`;
 
   return (
     <button

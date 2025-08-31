@@ -20,16 +20,17 @@ export default function LinkHotspotModal({ isOpen, onClose, onSave, onDelete, ho
   const [label, setLabel] = useState('');
   const [iconName, setIconName] = useState('default');
   
-  // Daftar ikon yang tersedia
+  // Daftar ikon yang tersedia - Sesuaikan dengan CSS yang ada
   const availableIcons = [
     { value: 'default', label: 'Default' },
-    { value: 'arrow', label: 'Arrow' },
+    { value: 'arrow-up', label: 'Arrow Up' },
     { value: 'door', label: 'Door' },
-    { value: 'stairs', label: 'Stairs' },
-    { value: 'elevator', label: 'Elevator' },
-    { value: 'exit', label: 'Exit' },
+    { value: 'location', label: 'Location' },
     { value: 'info', label: 'Info' },
     { value: 'warning', label: 'Warning' },
+    { value: 'exit', label: 'Exit' },
+    { value: 'stairs', label: 'Stairs' },
+    { value: 'elevator', label: 'Elevator' },
   ];
 
   useEffect(() => {

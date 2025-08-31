@@ -49,7 +49,8 @@ export default function VirtualTourClientPage({
 
   const handleLogoClick = () => {
     // Redirect ke halaman web utama
-    window.open('http://localhost:3000', '_blank');
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+    window.open(baseUrl, '_blank');
   };
 
   useEffect(() => {
@@ -163,6 +164,8 @@ export default function VirtualTourClientPage({
           hotspots={activeScene.hotspots}
           onHotspotClick={handleHotspotClick}
         />
+        
+
 
         {/* Scene Navigation Panel */}
         <div className={`absolute bottom-0 left-0 right-0 z-20 transition-all duration-300 ${showControls ? 'translate-y-0' : 'translate-y-full'}`}>

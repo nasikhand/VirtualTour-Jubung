@@ -24,10 +24,11 @@ export default function AdminWelcomePage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        // Gunakan endpoint yang benar untuk mendapatkan total
         const [scenesRes, hotspotsRes, menusRes] = await Promise.all([
-          fetch('/api/vtour/scenes?per_page=1'),
-          fetch('/api/vtour/hotspots?per_page=1'),
-          fetch('/api/vtour/menus?per_page=1')
+          fetch('/api/vtour/scenes'),
+          fetch('/api/vtour/hotspots'),
+          fetch('/api/vtour/menus')
         ]);
 
         const [scenesData, hotspotsData, menusData] = await Promise.all([
@@ -36,10 +37,17 @@ export default function AdminWelcomePage() {
           menusRes.json()
         ]);
 
+        // Extract total dari response
+        const totalScenes = scenesData.total || scenesData.data?.length || 0;
+        const totalHotspots = hotspotsData.total || hotspotsData.data?.length || 0;
+        const totalMenus = menusData.total || menusData.data?.length || 0;
+
+        console.log('Dashboard stats:', { totalScenes, totalHotspots, totalMenus });
+
         setStats({
-          totalScenes: scenesData.total || 0,
-          totalHotspots: hotspotsData.total || 0,
-          totalMenus: menusData.total || 0,
+          totalScenes,
+          totalHotspots,
+          totalMenus,
           lastUpdated: new Date().toISOString()
         });
       } catch (error) {

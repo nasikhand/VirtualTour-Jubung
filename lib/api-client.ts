@@ -1,6 +1,8 @@
 "use client";
 
 import axios, { AxiosError } from "axios";
+import type { Scene } from "@/types/virtual-tour";
+
 
 /** Base URL dari environment variable */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -133,10 +135,15 @@ export const vtourAPI = {
     const res = await apiClient.get(`api//vtour/scenes`, { params: { page } });
     return res.data;
   },
-  getScene: async (id: string | number) => {
-    const res = await apiClient.get(`/api/vtour/scenes/${id}`);
-    return res.data;
-  },
+  getScene: async (id: string | number): Promise<Scene | null> => {
+  const res = await apiClient.get(`/api/vtour/scenes/${id}`);
+  // backend kadang kirim { data: {...} } atau langsung {...}
+  const payload =
+    (res.data && typeof res.data === "object" && "data" in res.data)
+      ? (res.data as any).data
+      : res.data;
+  return (payload ?? null) as Scene | null;
+},
   createScene: async (formData: FormData) => {
     const res = await apiClient.post("/api/vtour/scenes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -188,3 +195,6 @@ export const vtourAPI = {
 };
 
 export default apiClient;
+export async function getScene(id: string | number): Promise<Scene | null> {
+  return vtourAPI.getScene(id);
+}

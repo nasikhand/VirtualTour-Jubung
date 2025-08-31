@@ -15,10 +15,34 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+// Token expiration time in milliseconds (24 hours)
+const TOKEN_EXPIRATION_TIME = 24 * 60 * 60 * 1000;
+
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if token is expired
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const tokenData = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return tokenData.exp < currentTime;
+    } catch {
+      return true;
+    }
+  };
+
+  // Check if stored token is expired based on timestamp
+  const isStoredTokenExpired = (): boolean => {
+    const tokenTimestamp = localStorage.getItem("vtourAdminTokenTimestamp");
+    if (!tokenTimestamp) return true;
+    
+    const currentTime = Date.now();
+    const storedTime = parseInt(tokenTimestamp);
+    return currentTime - storedTime > TOKEN_EXPIRATION_TIME;
+  };
 
   // Init: ambil token → set header → getProfile
   useEffect(() => {
@@ -26,13 +50,26 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       try {
         const storedToken = localStorage.getItem("vtourAdminToken");
         if (storedToken) {
+          // Check if token is expired
+          if (isTokenExpired(storedToken) || isStoredTokenExpired()) {
+            console.log("Token expired, removing...");
+            localStorage.removeItem("vtourAdminToken");
+            localStorage.removeItem("vtourAdminTokenTimestamp");
+            setUser(null);
+            setToken(null);
+            setLoading(false);
+            return;
+          }
+
           setToken(storedToken);
           apiClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
           const profile = await authAPI.getProfile();
           setUser(profile);
         }
       } catch (e) {
+        console.log("Auth initialization failed, clearing tokens...");
         localStorage.removeItem("vtourAdminToken");
+        localStorage.removeItem("vtourAdminTokenTimestamp");
         setUser(null);
         setToken(null);
       } finally {
@@ -42,6 +79,24 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     initAuth();
   }, []);
 
+  // Set up periodic token validation
+  useEffect(() => {
+    if (!token) return;
+
+    const validateToken = async () => {
+      try {
+        await authAPI.getProfile();
+      } catch (error) {
+        console.log("Token validation failed, logging out...");
+        await logout();
+      }
+    };
+
+    // Validate token every 5 minutes
+    const interval = setInterval(validateToken, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [token]);
+
   const login = useCallback(async (username: string, password: string) => {
     try {
       const payload = await authAPI.login(username, password);
@@ -50,8 +105,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
       if (!accessToken) return false;
 
-      // Simpan token + aktifkan header
+      // Simpan token + timestamp + username + aktifkan header
       localStorage.setItem("vtourAdminToken", accessToken);
+      localStorage.setItem("vtourAdminTokenTimestamp", Date.now().toString());
+      localStorage.setItem("vtourAdminUsername", username); // Simpan username
       setToken(accessToken);
       apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
@@ -62,6 +119,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       } catch {
         // Token tidak valid untuk /profile → gagal
         localStorage.removeItem("vtourAdminToken");
+        localStorage.removeItem("vtourAdminTokenTimestamp");
+        localStorage.removeItem("vtourAdminUsername");
         setUser(null);
         setToken(null);
         return false;
@@ -81,6 +140,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     } catch {}
     finally {
       localStorage.removeItem("vtourAdminToken");
+      localStorage.removeItem("vtourAdminTokenTimestamp");
       setUser(null);
       setToken(null);
       window.location.href = "/admin/sign-in";
