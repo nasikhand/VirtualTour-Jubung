@@ -334,7 +334,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="max-w-6xl mx-auto">
-          {/* Debug Info - Hanya tampilkan di development */}
+          {/* Debug Info - Hanya tampilkan di development
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <h3 className="text-sm font-semibold text-yellow-800 mb-2">🔍 Debug Info (Development Only)</h3>
@@ -344,7 +344,7 @@ export default function AdminSettingsPage() {
                 <p>API URL: {process.env.NEXT_PUBLIC_API_URL || 'Tidak diset'}</p>
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Profile Info Card */}

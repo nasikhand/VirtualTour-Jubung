@@ -75,7 +75,7 @@ export async function deleteVtourMenu(id: number) {
 
 export async function saveMenuOrder(menus: { id: number; order: number }[]) {
   // Dipanggil dari client component
-  const res = await fetch(`${apiBase}/menus/update-order`, {
+  const res = await fetch(`/api/vtour/update-order`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ menus }),

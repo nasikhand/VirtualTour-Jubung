@@ -49,7 +49,7 @@ export default function SceneEditor({ initialScene }: { initialScene: Scene }) {
   const handleDeleteScene = async () => {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/virtual-tour/scenes/${scene.id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/vtour/scenes/${scene.id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Gagal menghapus scene.')
       toast.success('Scene berhasil dihapus!')
       router.push('/admin/virtual-tour-section')

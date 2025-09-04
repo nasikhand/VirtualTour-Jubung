@@ -49,7 +49,7 @@ export default function VirtualTourClientPage({
 
   const handleLogoClick = () => {
     // Redirect ke halaman web utama
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
     window.open(baseUrl, '_blank');
   };
 

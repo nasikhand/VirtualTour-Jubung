@@ -109,7 +109,7 @@ export default function HotspotEditor({ scene, type, onExit }: HotspotEditorProp
     setIsLoadingScenes(true);
     try {
       console.log('🔄 Loading scenes for link hotspots');
-      const response = await fetch('/api/vtour/scenes');
+      const response = await fetch('/api/vtour/scenes?per_page=1000');
 
       if (response.ok) {
         const data = await response.json();
@@ -641,9 +641,8 @@ export default function HotspotEditor({ scene, type, onExit }: HotspotEditorProp
           <PannellumViewer
             ref={viewerRef}
             imageUrl={(() => {
-              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-              const imageUrl = `${backendUrl}/api/vtour/storage/${encodeURIComponent(scene.image_path)}`;
-              console.log('🖼️ Using image URL:', imageUrl);
+              const imageUrl = `/api/vtour/images/${encodeURIComponent(scene.image_path)}`;
+              console.log('🖼️ Using image URL (proxy):', imageUrl);
               return imageUrl;
             })()}
             initialYaw={scene.default_yaw || 0}

@@ -13,7 +13,8 @@ function authHeaders(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const page = req.nextUrl.searchParams.get("page") || "1";
-    const url = `${API_BASE}/api/vtour/scenes?page=${encodeURIComponent(page)}`;
+    const perPage = req.nextUrl.searchParams.get("per_page") || "";
+    const url = `${API_BASE}/api/vtour/scenes?page=${encodeURIComponent(page)}${perPage ? `&per_page=${encodeURIComponent(perPage)}` : ""}`;
 
     const res = await fetch(url, { headers: authHeaders(req), cache: "no-store" });
     if (res.status === 204) return new NextResponse(null, { status: 204 });

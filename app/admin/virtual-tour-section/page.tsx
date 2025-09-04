@@ -48,7 +48,7 @@ export default function VtourScenePage() {
   const loadScenes = (page = 1) => {
     setLoading(true)
     // Panggil API Proxy Next.js
-    fetch(`/api/vtour/scenes?page=${page}`)
+    fetch(`/api/vtour/scenes?page=${page}&per_page=100`)
       .then(res => res.json())
       .then(data => {
         setScenes(data.data ?? [])

@@ -1,4 +1,3 @@
-"use client";
 
 import axios, { AxiosError } from "axios";
 import type { Scene } from "@/types/virtual-tour";
@@ -132,7 +131,7 @@ export const authAPI = {
 // ----------------- VTOUR API -----------------
 export const vtourAPI = {
   getScenes: async (page = 1) => {
-    const res = await apiClient.get(`api//vtour/scenes`, { params: { page } });
+    const res = await apiClient.get(`/api/vtour/scenes`, { params: { page } });
     return res.data;
   },
   getScene: async (id: string | number): Promise<Scene | null> => {
@@ -155,7 +154,7 @@ export const vtourAPI = {
     return res.data;
   },
   deleteScene: async (id: string | number) => {
-    const res = await apiClient.delete(`/vtour/scenes/${id}`);
+    const res = await apiClient.delete(`/api/vtour/scenes/${id}`);
     return res.data;
   },
 

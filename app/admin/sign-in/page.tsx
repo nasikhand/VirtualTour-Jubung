@@ -129,7 +129,7 @@ export default function AdminSignInPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
+          {/* Demo Credentials
           <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
             <p className="text-sm text-gray-300 text-center">
               <span className="font-semibold text-blue-400">Demo Credentials:</span>
@@ -137,7 +137,7 @@ export default function AdminSignInPage() {
             <p className="text-xs text-gray-400 text-center mt-1">
               vtouradmin / vtouradmin123
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}
