@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
-import { Camera, MapPin, Eye, Settings, TrendingUp, Users, Clock, Activity, Plus, ArrowRight, Calendar, BarChart3, Globe, Zap } from 'lucide-react';
+import { 
+  Camera, MapPin, Settings, Users, Clock, Activity, Plus, 
+  ArrowRight, Calendar, BarChart3, Globe, Zap 
+} from 'lucide-react';
 
 interface DashboardStats {
   totalScenes: number;
@@ -24,7 +27,6 @@ export default function AdminWelcomePage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Gunakan endpoint yang benar untuk mendapatkan total
         const [scenesRes, hotspotsRes, menusRes] = await Promise.all([
           fetch('/api/vtour/scenes'),
           fetch('/api/vtour/hotspots'),
@@ -37,12 +39,10 @@ export default function AdminWelcomePage() {
           menusRes.json()
         ]);
 
-        // Extract total dari response
-        const totalScenes = scenesData.total || scenesData.data?.length || 0;
-        const totalHotspots = hotspotsData.total || hotspotsData.data?.length || 0;
-        const totalMenus = menusData.total || menusData.data?.length || 0;
-
-        console.log('Dashboard stats:', { totalScenes, totalHotspots, totalMenus });
+        // Jika API return array langsung
+        const totalScenes = Array.isArray(scenesData) ? scenesData.length : (scenesData.total || scenesData.data?.length || 0);
+        const totalHotspots = Array.isArray(hotspotsData) ? hotspotsData.length : (hotspotsData.total || hotspotsData.data?.length || 0);
+        const totalMenus = Array.isArray(menusData) ? menusData.length : (menusData.total || menusData.data?.length || 0);
 
         setStats({
           totalScenes,
@@ -50,6 +50,7 @@ export default function AdminWelcomePage() {
           totalMenus,
           lastUpdated: new Date().toISOString()
         });
+
       } catch (error) {
         console.error('Error fetching stats:', error);
       } finally {
@@ -124,9 +125,7 @@ export default function AdminWelcomePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm font-medium">Total Scenes</p>
-                  <p className="text-3xl font-bold">
-                    {loading ? '...' : stats.totalScenes}
-                  </p>
+                  <p className="text-3xl font-bold">{loading ? '...' : stats.totalScenes}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-full">
                   <Camera size={24} />
@@ -140,9 +139,7 @@ export default function AdminWelcomePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium">Total Hotspots</p>
-                  <p className="text-3xl font-bold">
-                    {loading ? '...' : stats.totalHotspots}
-                  </p>
+                  <p className="text-3xl font-bold">{loading ? '...' : stats.totalHotspots}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-full">
                   <MapPin size={24} />
@@ -156,9 +153,7 @@ export default function AdminWelcomePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm font-medium">Total Menus</p>
-                  <p className="text-3xl font-bold">
-                    {loading ? '...' : stats.totalMenus}
-                  </p>
+                  <p className="text-3xl font-bold">{loading ? '...' : stats.totalMenus}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-full">
                   <BarChart3 size={24} />

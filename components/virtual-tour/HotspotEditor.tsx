@@ -59,26 +59,35 @@ export default function HotspotEditor({ scene, type, onExit }: HotspotEditorProp
     setIsLoadingHotspots(true);
     try {
       console.log(`🔄 Loading ${type.toUpperCase()} hotspots for scene:`, scene.id);
-      const response = await fetch(`/api/vtour/scenes/${scene.id}/hotspots`);
+
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+      const url = `${API_BASE}/api/vtour/scenes/${scene.id}/hotspots`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+          // Jika backend pakai auth token, bisa langsung ambil dari localStorage atau context
+          // "Authorization": `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+
       console.log('Hotspots response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
         console.log('All hotspots response data:', data);
 
-        // Handle both array and object with data property
-        let allHotspots = [];
+        let allHotspots: any[] = [];
         if (Array.isArray(data)) {
           allHotspots = data;
         } else if (data && Array.isArray(data.data)) {
           allHotspots = data.data;
         }
 
-        // Filter by type
         const filteredHotspots = allHotspots.filter((h: any) => h.type === type);
         console.log(`Filtered ${type} hotspots:`, filteredHotspots);
 
-        // Convert to HotspotWithStatus with no status (existing from DB)
         const hsWithStatus: HotspotWithStatus[] = filteredHotspots.map((h: any) => ({ ...h, status: undefined }));
         setHotspotsWithStatus(hsWithStatus);
         setHotspots(filteredHotspots);
@@ -97,6 +106,7 @@ export default function HotspotEditor({ scene, type, onExit }: HotspotEditorProp
       setIsLoadingHotspots(false);
     }
   }, [scene.id, type]);
+
 
   useEffect(() => {
     loadHotspots();
@@ -300,149 +310,141 @@ export default function HotspotEditor({ scene, type, onExit }: HotspotEditorProp
     [scene.id]
   );
 
-  // Save CRUD
-  const handleSave = useCallback(async () => {
-    console.log(`💾 Saving ${type} hotspots with CRUD strategy:`, {
-      hotspots: hotspotsWithStatus,
-      deletedIds
-    });
-    setIsSaving(true);
+  // Save CRUD hotspots - langsung ke backend
+const handleSave = useCallback(async () => {
+  console.log(`💾 Saving ${type} hotspots with CRUD strategy:`, {
+    hotspots: hotspotsWithStatus,
+    deletedIds
+  });
+  setIsSaving(true);
 
-    try {
-      const createPromises: Promise<any>[] = [];
-      const updatePromises: Promise<any>[] = [];
-      const deletePromises: Promise<any>[] = [];
+  try {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-      // Deletes (server only)
-      for (const id of deletedIds) {
-        const deletePromise = tryHotspotRequest('DELETE', id);
-        deletePromises.push(deletePromise);
-        console.log(`🗑️ Deleting hotspot ${id}`);
-      }
+    const createPromises: Promise<any>[] = [];
+    const updatePromises: Promise<any>[] = [];
+    const deletePromises: Promise<any>[] = [];
 
-      // Creates & updates
-      for (const hotspot of hotspotsWithStatus) {
-        if (hotspot.yaw === undefined || hotspot.pitch === undefined) continue;
-
-        if (hotspot.status === 'new') {
-          const payload: any = {
-            type: type,
-            yaw: Number(hotspot.yaw),
-            pitch: Number(hotspot.pitch),
-            label: hotspot.label || `${type === 'info' ? 'Info' : 'Link'} Hotspot`,
-            description: hotspot.description || `${type === 'info' ? 'Deskripsi' : 'Link'} hotspot`,
-          };
-
-          if (type === 'info') {
-            payload.sentences = hotspot.sentences || [];
-          } else if (type === 'link') {
-            payload.target_scene_id = hotspot.target_scene_id;
-            payload.icon_name = hotspot.icon_name || 'default';
-          }
-
-          console.log(`➕ Creating ${type} hotspot:`, payload);
-          const createPromise = fetch(`/api/vtour/scenes/${scene.id}/hotspots`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }).then(response => {
-            if (!response.ok) {
-              throw new Error(`Failed to create hotspot: ${response.statusText}`);
-            }
-            return response.json();
-          });
-
-          createPromises.push(createPromise);
-
-        } else if (hotspot.status === 'modified') {
-          const payload: any = {
-            type: type,
-            yaw: Number(hotspot.yaw),
-            pitch: Number(hotspot.pitch),
-            label: hotspot.label || `${type === 'info' ? 'Info' : 'Link'} Hotspot`,
-            description: hotspot.description || `${type === 'info' ? 'Deskripsi' : 'Link'} hotspot`,
-          };
-
-          if (type === 'info') {
-            payload.sentences = hotspot.sentences || [];
-          } else if (type === 'link') {
-            payload.target_scene_id = hotspot.target_scene_id;
-            payload.icon_name = hotspot.icon_name || 'default';
-          }
-
-          console.log(`✏️ Updating ${type} hotspot ${hotspot.id}:`, payload);
-          const updatePromise = tryHotspotRequest('PUT', Number(hotspot.id), payload);
-          updatePromises.push(updatePromise);
+    // Deletes
+    for (const id of deletedIds) {
+      const deletePromise = fetch(`${API_BASE}/api/vtour/scenes/${scene.id}/hotspots/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          // 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
+      }).then(res => {
+        if (!res.ok) throw new Error(`Failed to delete hotspot ${id}`);
+        return res.json().catch(() => null);
+      });
+
+      deletePromises.push(deletePromise);
+      console.log(`🗑️ Deleting hotspot ${id}`);
+    }
+
+    // Creates & Updates
+    for (const hotspot of hotspotsWithStatus) {
+      if (hotspot.yaw === undefined || hotspot.pitch === undefined) continue;
+
+      const payload: any = {
+        type: type,
+        yaw: Number(hotspot.yaw),
+        pitch: Number(hotspot.pitch),
+        label: hotspot.label || `${type === 'info' ? 'Info' : 'Link'} Hotspot`,
+        description: hotspot.description || `${type === 'info' ? 'Deskripsi' : 'Link'} hotspot`,
+      };
+
+      if (type === 'info') payload.sentences = hotspot.sentences || [];
+      else if (type === 'link') {
+        payload.target_scene_id = hotspot.target_scene_id;
+        payload.icon_name = hotspot.icon_name || 'default';
       }
 
-      const results = await Promise.all([
-        ...createPromises,
-        ...updatePromises,
-        ...deletePromises
-      ]);
+      if (hotspot.status === 'new') {
+        console.log(`➕ Creating ${type} hotspot:`, payload);
+        const createPromise = fetch(`${API_BASE}/api/vtour/scenes/${scene.id}/hotspots`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).then(res => {
+          if (!res.ok) throw new Error(`Failed to create hotspot: ${res.statusText}`);
+          return res.json();
+        });
+        createPromises.push(createPromise);
 
-      console.log(`✅ All operations completed successfully:`, results);
-
-      setDeletedIds([]);
-      setIsDirty(false);
-
-      toast.success(`${results.length} operasi ${type} hotspot berhasil disimpan!`);
-
-      await loadHotspots();
-
-    } catch (error) {
-      console.error(`❌ Error saving ${type} hotspots:`, error);
-      toast.error('Gagal menyimpan perubahan: ' + (error as Error).message);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [hotspotsWithStatus, deletedIds, scene.id, type, loadHotspots, tryHotspotRequest]);
-
-  // Modal save — pertahankan status 'new' kalau sebelumnya 'new'
-  const handleModalSave = useCallback((data: any) => {
-    const updatedHotspot: Hotspot = {
-      ...selectedHotspot,
-      ...data,
-    } as Hotspot;
-
-    if (selectedHotspot?.id && selectedHotspot.id.toString().startsWith('temp_')) {
-      const newHotspot: HotspotWithStatus = {
-        ...updatedHotspot,
-        id: Date.now(),
-        status: 'new'
-      };
-
-      setHotspots(prev => [...prev, newHotspot]);
-      setHotspotsWithStatus(prev => [...prev, newHotspot]);
-
-      console.log('➕ New hotspot added with status "new":', newHotspot);
-    } else if (selectedHotspot?.id) {
-      const existing = hotspotsWithStatus.find(h => h.id === selectedHotspot.id);
-      const nextStatus: 'new' | 'modified' | undefined =
-        existing?.status === 'new' ? 'new' : 'modified';
-
-      const modifiedHotspot: HotspotWithStatus = {
-        ...updatedHotspot,
-        status: nextStatus
-      };
-
-      setHotspots(prev =>
-        prev.map(h => h.id === selectedHotspot.id ? updatedHotspot : h)
-      );
-      setHotspotsWithStatus(prev =>
-        prev.map(h => h.id === selectedHotspot.id ? modifiedHotspot : h)
-      );
-
-      console.log(`✏️ Existing hotspot updated (status kept as "${nextStatus}")`, modifiedHotspot);
+      } else if (hotspot.status === 'modified' && hotspot.id) {
+        console.log(`✏️ Updating ${type} hotspot ${hotspot.id}:`, payload);
+        const updatePromise = fetch(`${API_BASE}/api/vtour/scenes/${scene.id}/hotspots/${hotspot.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).then(res => {
+          if (!res.ok) throw new Error(`Failed to update hotspot ${hotspot.id}: ${res.statusText}`);
+          return res.json();
+        });
+        updatePromises.push(updatePromise);
+      }
     }
 
-    setIsDirty(true);
-    setIsModalOpen(false);
-    setSelectedHotspot(null);
+    const results = await Promise.all([...createPromises, ...updatePromises, ...deletePromises]);
+    console.log(`✅ All operations completed successfully:`, results);
 
-    console.log('💾 Modal save completed, isDirty set to true');
-  }, [selectedHotspot, hotspotsWithStatus]);
+    setDeletedIds([]);
+    setIsDirty(false);
+    toast.success(`${results.length} operasi ${type} hotspot berhasil disimpan!`);
+
+    await loadHotspots(); // Reload dari backend langsung
+
+  } catch (error) {
+    console.error(`❌ Error saving ${type} hotspots:`, error);
+    toast.error('Gagal menyimpan perubahan: ' + (error as Error).message);
+  } finally {
+    setIsSaving(false);
+  }
+}, [hotspotsWithStatus, deletedIds, scene.id, type, loadHotspots]);
+
+// Modal save — langsung update frontend state
+const handleModalSave = useCallback((data: any) => {
+  const updatedHotspot: Hotspot = {
+    ...selectedHotspot,
+    ...data,
+  } as Hotspot;
+
+  if (selectedHotspot?.id && selectedHotspot.id.toString().startsWith('temp_')) {
+    const newHotspot: HotspotWithStatus = {
+      ...updatedHotspot,
+      id: Date.now(),
+      status: 'new'
+    };
+    setHotspots(prev => [...prev, newHotspot]);
+    setHotspotsWithStatus(prev => [...prev, newHotspot]);
+    console.log('➕ New hotspot added with status "new":', newHotspot);
+
+  } else if (selectedHotspot?.id) {
+    const existing = hotspotsWithStatus.find(h => h.id === selectedHotspot.id);
+    const nextStatus: 'new' | 'modified' | undefined = existing?.status === 'new' ? 'new' : 'modified';
+
+    const modifiedHotspot: HotspotWithStatus = {
+      ...updatedHotspot,
+      status: nextStatus
+    };
+
+    setHotspots(prev =>
+      prev.map(h => h.id === selectedHotspot.id ? updatedHotspot : h)
+    );
+    setHotspotsWithStatus(prev =>
+      prev.map(h => h.id === selectedHotspot.id ? modifiedHotspot : h)
+    );
+
+    console.log(`✏️ Existing hotspot updated (status kept as "${nextStatus}")`, modifiedHotspot);
+  }
+
+  setIsDirty(true);
+  setIsModalOpen(false);
+  setSelectedHotspot(null);
+  console.log('💾 Modal save completed, isDirty set to true');
+}, [selectedHotspot, hotspotsWithStatus]);
+
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);

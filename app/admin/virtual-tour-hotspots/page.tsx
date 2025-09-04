@@ -73,42 +73,50 @@ export default function VirtualTourHotspotsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [hasOrderChanged, setHasOrderChanged] = useState(false);
 
-  // Fungsi untuk memuat semua data awal dari server
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [menuData, sceneRes, settingsRes] = await Promise.all([
-        getVtourMenus(),
-        fetch('/api/vtour/scenes?per_page=100'),
-        fetch('/api/vtour/settings')
-      ]);
-
-      setMenus(menuData);
-
-      if (sceneRes.ok) {
-        const sceneData = await sceneRes.json();
-        setScenes(sceneData.data ?? []);
-      } else {
-        toast.error('Gagal memuat daftar scene');
-      }
-
-      if (settingsRes.ok) {
-        const settingsData = await settingsRes.json();
-        if (settingsData.data?.vtour_logo_path) {
-          // ✅ Gunakan public storage API untuk preview logo
-          const logoPath = settingsData.data.vtour_logo_path;
-          const publicLogoUrl = `/api/vtour/public/storage/${logoPath}?t=${Date.now()}`;
-          setPreviewImage(publicLogoUrl);
+ // Fungsi untuk memuat semua data awal dari server
+const fetchData = async () => {
+  setIsLoading(true);
+  try {
+    const [menuData, sceneRes, settingsRes] = await Promise.all([
+      getVtourMenus(),
+      fetch('/api/vtour/scenes?per_page=100'),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vtour/settings`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('vtourAdminToken')}`
         }
-      }
+      })
+    ]);
 
-      setHasOrderChanged(false);
-    } catch (err) {
-      toast.error('Gagal memuat data dari server');
-    } finally {
-      setIsLoading(false);
+    setMenus(menuData);
+
+    if (sceneRes.ok) {
+      const sceneData = await sceneRes.json();
+      setScenes(sceneData.data ?? []);
+    } else {
+      toast.error('Gagal memuat daftar scene');
     }
-  };
+
+    if (settingsRes.ok) {
+      const settingsData = await settingsRes.json();
+
+      if (settingsData.data?.vtour_logo_path) {
+        // Ambil path logo dari DB tanpa hash
+        const logoPath = settingsData.data.vtour_logo_path;
+
+        // Bangun URL langsung ke storage backend Laravel
+        const publicLogoUrl = `${process.env.NEXT_PUBLIC_STORAGE_URL}/${logoPath}`;
+        setPreviewImage(publicLogoUrl);
+      }
+    }
+
+    setHasOrderChanged(false);
+  } catch (err) {
+    toast.error('Gagal memuat data dari server');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -145,22 +153,36 @@ export default function VirtualTourHotspotsPage() {
     setIsDeleteModalOpen(true);
   };
 
-  // Fungsi yang dijalankan saat penghapusan dikonfirmasi
   const handleConfirmDelete = async () => {
-    if (!menuToDelete) return;
-    setIsDeleting(true);
-    try {
-      await deleteVtourMenu(menuToDelete.id);
-      toast.success(`Menu "${menuToDelete.name}" berhasil dihapus`);
-      fetchData();
-    } catch {
-      toast.error('Gagal menghapus menu');
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteModalOpen(false);
-      setMenuToDelete(null);
+  if (!menuToDelete) return;
+  setIsDeleting(true);
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vtour/menus/${menuToDelete.id}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem('vtourAdminToken')}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${res.status}: Gagal menghapus menu`);
     }
-  };
+
+    toast.success(`Menu "${menuToDelete.name}" berhasil dihapus`);
+    fetchData();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Gagal menghapus menu";
+    toast.error(errorMessage);
+  } finally {
+    setIsDeleting(false);
+    setIsDeleteModalOpen(false);
+    setMenuToDelete(null);
+  }
+};
+
 
 
 
@@ -178,19 +200,35 @@ export default function VirtualTourHotspotsPage() {
   };
 
   // Fungsi untuk menyimpan urutan menu yang baru
-  const handleSaveOrder = async () => {
-    setIsSaving(true);
-    const menuOrderPayload = menus.map((menu, index) => ({ id: menu.id, order: index }));
-    try {
-      await saveMenuOrder(menuOrderPayload);
-      toast.success('Urutan menu berhasil disimpan!');
-      setHasOrderChanged(false);
-    } catch (error) {
-      toast.error('Gagal menyimpan urutan menu.');
-    } finally {
-      setIsSaving(false);
+const handleSaveOrder = async () => {
+  setIsSaving(true);
+  const menuOrderPayload = menus.map((menu, index) => ({ id: menu.id, order: index }));
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vtour/menus/update-order`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem('vtourAdminToken')}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(menuOrderPayload),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${res.status}: Gagal update urutan menu`);
     }
-  };
+
+    toast.success("Urutan menu berhasil disimpan!");
+    setHasOrderChanged(false);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Gagal menyimpan urutan menu";
+    toast.error(errorMessage);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   // Konfigurasi sensor untuk DND Kit
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -218,77 +256,98 @@ export default function VirtualTourHotspotsPage() {
     setCurrentPage(1);
   }, [searchTerm, filterStatus]);
 
-  // Fungsi untuk menangani upload gambar logo
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    // Fungsi untuk menangani upload gambar logo langsung ke backend Laravel
+const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-    // Validasi sisi client (tidak ada perubahan)
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    const maxSize = 2 * 1024 * 1024; // 2MB
-    if (!allowedTypes.includes(file.type)) return toast.error('Format harus PNG, JPG, atau WEBP.');
-    if (file.size > maxSize) return toast.error('Ukuran file maksimal 2MB.');
+  // Validasi sisi client
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  if (!allowedTypes.includes(file.type)) return toast.error('Format harus PNG, JPG, atau WEBP.');
+  if (file.size > maxSize) return toast.error('Ukuran file maksimal 2MB.');
 
-    const formData = new FormData();
-    formData.append('logo', file);
+  const formData = new FormData();
+  formData.append('logo', file);
 
-    const toastId = toast.loading("Mengupload logo...");
-    try {
-      // Memanggil proxy Next.js (tidak ada perubahan)
-      const res = await fetch('/api/vtour/settings/logo', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('vtourAdminToken')}`
-        },
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Gagal mem-parsing respons error' }));
-        throw new Error(errorData.message || errorData.error || `HTTP ${res.status}: Gagal upload logo.`);
-      }
+  const toastId = toast.loading("Mengupload logo...");
+  try {
+    // Panggil backend Laravel langsung
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vtour/settings/logo`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('vtourAdminToken')}`
+        // Jangan set 'Content-Type', biarkan browser otomatis membuat boundary
+      },
+    });
 
-      const result = await res.json();
-      
-      // --- MULAI PERUBAHAN ---
-
-      // PERUBAHAN 1: Cari `vtour_logo_path` (path relatif) dari backend, bukan URL lengkap.
-      let logoPath = null;
-      if (result.data?.vtour_logo_path) {
-        logoPath = result.data.vtour_logo_path;
-      } else if (result.vtour_logo_path) {
-        logoPath = result.vtour_logo_path;
-      } else if (result.data?.path) {
-        logoPath = result.data.path;
-      } else if (result.path) {
-        logoPath = result.path;
-      }
-      
-      if (logoPath) {
-        // ✅ PERUBAHAN: Gunakan PUBLIC storage API (tidak perlu authentication)
-        // Ini akan membuat browser memanggil: `http://localhost:3001/api/vtour/public/storage/vtour/logos/namafile.png`
-        const finalUrl = `/api/vtour/public/storage/${logoPath}?t=${Date.now()}`;
-        
-        setPreviewImage(finalUrl);
-        toast.success("Logo berhasil diupload!", { id: toastId });
-      } else {
-        console.error('❌ Path logo tidak ditemukan di respons:', result);
-        throw new Error('Respons tidak mengandung path logo yang valid');
-      }
-      // --- SELESAI PERUBAHAN ---
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal mengupload logo.";
-      toast.error(errorMessage, { id: toastId });
-    } finally {
-      event.target.value = ''; // Mengosongkan input file
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Gagal mem-parsing respons error' }));
+      throw new Error(errorData.message || errorData.error || `HTTP ${res.status}: Gagal upload logo.`);
     }
-  };
 
-  const handleRemoveLogo = () => {
+    const result = await res.json();
+
+    // Ambil path logo dari response backend
+    let logoPath = null;
+    if (result.data?.vtour_logo_path) {
+      logoPath = result.data.vtour_logo_path;
+    } else if (result.vtour_logo_path) {
+      logoPath = result.vtour_logo_path;
+    } else if (result.data?.path) {
+      logoPath = result.data.path;
+    } else if (result.path) {
+      logoPath = result.path;
+    }
+
+    if (!logoPath) {
+      console.error('❌ Path logo tidak ditemukan di respons:', result);
+      throw new Error('Respons tidak mengandung path logo yang valid');
+    }
+
+    // Gunakan storage public backend (langsung)
+    const finalUrl = `${process.env.NEXT_PUBLIC_STORAGE_URL}/${logoPath}`;
+    setPreviewImage(finalUrl);
+    toast.success("Logo berhasil diupload!", { id: toastId });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Gagal mengupload logo.";
+    toast.error(errorMessage, { id: toastId });
+  } finally {
+    event.target.value = ''; // Reset input file
+  }
+};
+
+// Fungsi untuk menghapus logo dari backend Laravel
+const handleRemoveLogo = async () => {
+  if (!confirm("Apakah Anda yakin ingin menghapus logo?")) return;
+
+  const toastId = toast.loading("Menghapus logo...");
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vtour/settings/logo`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem('vtourAdminToken')}`,
+        "Content-Type": "application/json"
+      },
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Gagal mem-parsing respons error' }));
+      throw new Error(errorData.message || errorData.error || `HTTP ${res.status}: Gagal menghapus logo.`);
+    }
+
+    // Reset preview image di frontend
     setPreviewImage('/placeholder-logo.svg');
-    toast.success('Logo berhasil dihapus!');
-  };
+    toast.success("Logo berhasil dihapus!", { id: toastId });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Gagal menghapus logo.";
+    toast.error(errorMessage, { id: toastId });
+  }
+};
+
 
   return (
     <>
@@ -421,23 +480,20 @@ export default function VirtualTourHotspotsPage() {
                         >
                           Upload Logo
                         </button>
-                                                 {previewImage && previewImage !== '/placeholder-logo.svg' && (
-                           <button
-                             onClick={() => {
-                               setPreviewImage('/placeholder-logo.svg');
-                               toast.success('Logo berhasil dihapus!');
-                             }}
-                             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
-                           >
-                             Hapus
-                           </button>
-                         )}
+                          {previewImage && previewImage !== '/placeholder-logo.svg' && (
+                            <button
+                              onClick={handleRemoveLogo} // panggil fungsi async DELETE ke backend
+                              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                            >
+                              Hapus
+                            </button>
+                          )}
                       </div>
                     </div>
                     
                     <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
                       <div className="w-32 h-32 mx-auto relative">
-                                                 <img
+                          <img
                            src={previewImage || '/placeholder-logo.svg'}
                            alt="Preview Logo"
                            className="w-full h-full object-contain transition-opacity duration-300"
