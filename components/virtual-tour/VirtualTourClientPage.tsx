@@ -175,10 +175,22 @@ export default function VirtualTourClientPage({
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                 <Compass size={16} className="text-white" />
                 <span className="text-white text-sm font-medium">
-                  Scene {menus.findIndex(m => m.scene_id === activeScene.id) + 1} dari {menus.filter(m => !m.is_map_scene).length}
+                  {
+                    // Menambahkan console log untuk debugging
+                    (() => {
+                      const index = menus.findIndex(m => m.scene_id === activeScene.id);
+                      const totalScenes = menus.filter(m => !m.is_map_scene).length;
+            
+                      console.log('Current Scene Index:', index + 1);  // Log index scene
+                      console.log('Total Scenes:', totalScenes); // Log total scenes
+            
+                      return `Scene ${index + 1} dari ${totalScenes}`;
+                    })()
+                  }
                 </span>
               </div>
             </div>
+
             
             {/* Scene Gallery */}
             <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">

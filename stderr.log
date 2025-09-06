@@ -3178,3 +3178,206 @@ Laravel Error (GET hotspots): {
     at async NextNodeServer.renderToResponseImpl (/home/wisataju/nodevenv/sistem-informasi-manajemen_PMM-JEMBER/virtual-tour/18/lib/node_modules/next/dist/server/base-server.js:1962:32)
  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+(node:3939343) ExperimentalWarning: buffer.File is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Laravel Error (GET menus): {}
+Laravel Error (GET hotspots): {
+  message: "Unclosed '{' on line 168",
+  exception: 'ParseError',
+  file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/routes/api.php',
+  line: 226,
+  trace: [
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php',
+      line: 512,
+      function: 'register',
+      class: 'Illuminate\\Routing\\RouteFileRegistrar',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php',
+      line: 466,
+      function: 'loadRoutes',
+      class: 'Illuminate\\Routing\\Router',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Routing/RouteRegistrar.php',
+      line: 206,
+      function: 'group',
+      class: 'Illuminate\\Routing\\Router',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php',
+      line: 214,
+      function: 'group',
+      class: 'Illuminate\\Routing\\RouteRegistrar',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php',
+      line: 36,
+      function: 'Illuminate\\Foundation\\Configuration\\{closure}',
+      class: 'Illuminate\\Foundation\\Configuration\\ApplicationBuilder',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php',
+      line: 43,
+      function: 'Illuminate\\Container\\{closure}',
+      class: 'Illuminate\\Container\\BoundMethod',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php',
+      line: 84,
+      function: 'unwrapIfClosure',
+      class: 'Illuminate\\Container\\Util',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php',
+      line: 35,
+      function: 'callBoundMethod',
+      class: 'Illuminate\\Container\\BoundMethod',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php',
+      line: 780,
+      function: 'call',
+      class: 'Illuminate\\Container\\BoundMethod',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Support/Providers/RouteServiceProvider.php',
+      line: 162,
+      function: 'call',
+      class: 'Illuminate\\Container\\Container',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Support/Providers/RouteServiceProvider.php',
+      line: 59,
+      function: 'loadRoutes',
+      class: 'Illuminate\\Foundation\\Support\\Providers\\RouteServiceProvider',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php',
+      line: 36,
+      function: 'Illuminate\\Foundation\\Support\\Providers\\{closure}',
+      class: 'Illuminate\\Foundation\\Support\\Providers\\RouteServiceProvider',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php',
+      line: 43,
+      function: 'Illuminate\\Container\\{closure}',
+      class: 'Illuminate\\Container\\BoundMethod',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php',
+      line: 84,
+      function: 'unwrapIfClosure',
+      class: 'Illuminate\\Container\\Util',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php',
+      line: 35,
+      function: 'callBoundMethod',
+      class: 'Illuminate\\Container\\BoundMethod',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php',
+      line: 780,
+      function: 'call',
+      class: 'Illuminate\\Container\\BoundMethod',
+      type: '::'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Support/ServiceProvider.php',
+      line: 143,
+      function: 'call',
+      class: 'Illuminate\\Container\\Container',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php',
+      line: 1153,
+      function: 'callBootedCallbacks',
+      class: 'Illuminate\\Support\\ServiceProvider',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php',
+      line: 1131,
+      function: 'bootProvider',
+      class: 'Illuminate\\Foundation\\Application',
+      type: '->'
+    },
+    {
+      function: 'Illuminate\\Foundation\\{closure}',
+      class: 'Illuminate\\Foundation\\Application',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php',
+      line: 1130,
+      function: 'array_walk'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/BootProviders.php',
+      line: 17,
+      function: 'boot',
+      class: 'Illuminate\\Foundation\\Application',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php',
+      line: 341,
+      function: 'bootstrap',
+      class: 'Illuminate\\Foundation\\Bootstrap\\BootProviders',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php',
+      line: 186,
+      function: 'bootstrapWith',
+      class: 'Illuminate\\Foundation\\Application',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php',
+      line: 170,
+      function: 'bootstrap',
+      class: 'Illuminate\\Foundation\\Http\\Kernel',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php',
+      line: 144,
+      function: 'sendRequestThroughRouter',
+      class: 'Illuminate\\Foundation\\Http\\Kernel',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php',
+      line: 1219,
+      function: 'handle',
+      class: 'Illuminate\\Foundation\\Http\\Kernel',
+      type: '->'
+    },
+    {
+      file: '/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/backend/public/index.php',
+      line: 20,
+      function: 'handleRequest',
+      class: 'Illuminate\\Foundation\\Application',
+      type: '->'
+    }
+  ]
+}

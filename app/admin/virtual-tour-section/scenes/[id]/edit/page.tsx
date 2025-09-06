@@ -1,5 +1,5 @@
 import { getSceneById } from '@/lib/data/virtual-tour'
-import SceneEditor from '../../../../../../components/virtual-tour/SceneEditor'
+import InfoHotspotContainer from '../../../../../../components/virtual-tour/InfoHotspotContainer' // Import InfoHotspotContainer
 import { notFound } from 'next/navigation'
 
 export default async function EditScenePage({ params }: { params: { id: string } }) {
@@ -16,6 +16,6 @@ export default async function EditScenePage({ params }: { params: { id: string }
     return notFound();
   }
 
-  // Kirim objek scene yang sudah benar ke client component
-  return <SceneEditor initialScene={scene} />;
+  // Langsung render InfoHotspotContainer dengan data scene yang sudah benar
+  return <InfoHotspotContainer scene={scene} />;
 }
