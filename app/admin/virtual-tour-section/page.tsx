@@ -1,13 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Scene } from '@/types/virtual-tour'
+import { Scene, VtourMenu } from '@/types/virtual-tour'
 import SceneCard from '@/components/virtual-tour/SceneCard'
 import CreateSceneModal from '@/components/virtual-tour/CreateSceneModal'
 import { Plus, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-// --- Komponen Helper ---
+/* =========================
+   Helper: error & abort guard
+   ========================= */
+function isAbortError(err: unknown): boolean {
+  if (typeof DOMException !== 'undefined' && err instanceof DOMException) {
+    return err.name === 'AbortError'
+  }
+  return !!(err && typeof err === 'object' && 'code' in err && (err as any).code === 'ABORT_ERR')
+}
+function toError(err: unknown): Error {
+  return err instanceof Error ? err : new Error(String(err))
+}
+
+/* =========================
+   Komponen Helper (UI)
+   ========================= */
 const SceneGridSkeleton = ({ count = 8 }) => (
   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
     {[...Array(count)].map((_, i) => (
@@ -39,9 +54,12 @@ const EmptyState = () => (
   </div>
 )
 
-// --- Halaman Utama ---
+/* =========================
+   Halaman Utama
+   ========================= */
 export default function VtourScenePage() {
   const [scenes, setScenes] = useState<Scene[]>([])
+  const [menus, setMenus] = useState<VtourMenu[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [lastPage, setLastPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -49,36 +67,66 @@ export default function VtourScenePage() {
   const [sceneToDelete, setSceneToDelete] = useState<Scene | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Fetch scenes
+  // Fetch scenes and menus
   const loadScenes = async (page = 1) => {
     setLoading(true)
     const controller = new AbortController()
 
     try {
-      const res = await fetch(`/api/vtour/scenes?page=${page}&per_page=100`, {
-        signal: controller.signal,
-      })
-      if (!res.ok) throw new Error('Gagal fetch data')
+      const [scenesRes, menusRes] = await Promise.all([
+        fetch(`/api/vtour/scenes?page=${page}&per_page=100`, {
+          signal: controller.signal,
+        }),
+        fetch('/api/vtour/menus', {
+          signal: controller.signal,
+        })
+      ])
 
-      const data = await res.json()
-      setScenes(data.data ?? [])
-      setCurrentPage(data.current_page ?? 1)
-      setLastPage(data.last_page ?? 1)
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error fetching scenes:', err)
+      if (!scenesRes.ok) throw new Error('Gagal fetch scenes')
+
+      const scenesData = await scenesRes.json()
+      const dataList: Scene[] = Array.isArray(scenesData?.data) ? scenesData.data : []
+      const cp = Number(scenesData?.current_page ?? 1)
+      const lp = Number(scenesData?.last_page ?? 1)
+
+      setScenes(dataList)
+      setCurrentPage(Number.isFinite(cp) ? cp : 1)
+      setLastPage(Number.isFinite(lp) ? lp : 1)
+
+      if (menusRes.ok) {
+        const menusData = await menusRes.json()
+        setMenus(Array.isArray(menusData?.data) ? menusData.data : [])
+      } else {
+        setMenus([])
+      }
+    } catch (err: unknown) {
+      if (!isAbortError(err)) {
+        console.error('Error fetching data:', toError(err))
         setScenes([])
+        setMenus([])
+        toast.error('Gagal memuat data scene/menus')
       }
     } finally {
       setLoading(false)
     }
 
-    return () => controller.abort()
+    return controller
   }
 
   useEffect(() => {
-    const cleanup = loadScenes(currentPage)
-    return cleanup
+    let active = true
+    let controller: AbortController | null = null
+
+    ;(async () => {
+      controller = await loadScenes(currentPage)
+      // Jika effect sudah dibatalkan sebelum load selesai
+      if (!active && controller) controller.abort()
+    })()
+
+    return () => {
+      active = false
+      if (controller) controller.abort()
+    }
   }, [currentPage])
 
   const handlePageChange = (newPage: number) => {
@@ -95,37 +143,36 @@ export default function VtourScenePage() {
   const handleDeleteClick = (scene: Scene) => setSceneToDelete(scene)
 
   const handleDeleteConfirm = async () => {
-  if (!sceneToDelete || isDeleting) return
-  setIsDeleting(true)
+    if (!sceneToDelete || isDeleting) return
+    setIsDeleting(true)
 
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/vtour/scenes/${sceneToDelete.id}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          // tambahkan auth token kalau backend pakai auth
-          // 'Authorization': `Bearer ${yourToken}`
-        },
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/vtour/scenes/${sceneToDelete.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            // 'Authorization': `Bearer ${yourToken}` // jika backend butuh auth
+          },
+        }
+      )
+
+      if (response.ok) {
+        toast.success('Scene berhasil dihapus!')
+        await loadScenes(currentPage)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData?.message || 'Gagal menghapus scene')
       }
-    )
-
-    if (response.ok) {
-      toast.success('Scene berhasil dihapus!')
-      loadScenes(currentPage)
-    } else {
-      const errorData = await response.json().catch(() => ({}))
-      toast.error(errorData.message || 'Gagal menghapus scene')
+    } catch (err: unknown) {
+      console.error('Error deleting scene:', toError(err))
+      toast.error('Terjadi kesalahan saat menghapus scene')
+    } finally {
+      setIsDeleting(false)
+      setSceneToDelete(null)
     }
-  } catch (error) {
-    console.error('Error deleting scene:', error)
-    toast.error('Terjadi kesalahan saat menghapus scene')
-  } finally {
-    setIsDeleting(false)
-    setSceneToDelete(null)
   }
-}
 
   const renderContent = () => {
     if (loading) return <SceneGridSkeleton />
@@ -141,7 +188,7 @@ export default function VtourScenePage() {
               onDelete={handleDeleteClick}
               href={`/admin/virtual-tour-section/scenes/${scene.id}/edit`}
               viewMode="grid"
-              isInMenu={false}
+              isInMenu={menus.some(menu => menu.scene_id === scene.id)}
             />
           ))}
         </div>

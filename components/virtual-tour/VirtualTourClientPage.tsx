@@ -66,7 +66,7 @@ export default function VirtualTourClientPage({
     if (hotspot.type === 'info') {
       setInfoHotspot(hotspot);
     } else if (hotspot.type === 'link' && hotspot.target_scene_id) {
-      const targetMenu = menus.find(menu => menu.scene_id === hotspot.target_scene_id);
+      const targetMenu = menus.find(menu => String(menu.scene_id) === String(hotspot.target_scene_id));
       if (targetMenu?.scene) {
         switchScene(targetMenu.scene);
       }
@@ -178,7 +178,7 @@ export default function VirtualTourClientPage({
                   {
                     // Menambahkan console log untuk debugging
                     (() => {
-                      const index = menus.findIndex(m => m.scene_id === activeScene.id);
+                      const index = menus.findIndex(m => String(m.scene_id) === String(activeScene.id));
                       const totalScenes = menus.filter(m => !m.is_map_scene).length;
             
                       console.log('Current Scene Index:', index + 1);  // Log index scene

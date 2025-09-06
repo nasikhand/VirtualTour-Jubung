@@ -132,14 +132,16 @@ const fetchData = async () => {
   const handleAddMenu = async (data: Partial<VtourMenu>) => {
     setIsSaving(true);
     try {
-      if (menus.some(menu => menu.scene_id === data.scene_id)) {
+      if (menus.some(menu => String(menu.scene_id) === String(data.scene_id))) {
         toast.error('Scene ini sudah ada di dalam menu.');
         return;
       }
       await createVtourMenu(data);
       toast.success(`Menu berhasil ditambahkan`);
-      fetchData();
+      // Refresh data dan tunggu selesai
+      await fetchData();
       setIsModalOpen(false);
+      console.log('Menu updated, current menus:', menus);
     } catch (err) {
       toast.error('Gagal menambahkan menu');
     } finally {
@@ -239,8 +241,8 @@ const handleSaveOrder = async () => {
       (scene.description && scene.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesFilter = filterStatus === 'all' ||
-      (filterStatus === 'active' && menus.some(menu => menu.scene_id === scene.id)) ||
-      (filterStatus === 'inactive' && !menus.some(menu => menu.scene_id === scene.id));
+      (filterStatus === 'active' && menus.some(menu => String(menu.scene_id) === String(scene.id))) ||
+        (filterStatus === 'inactive' && !menus.some(menu => String(menu.scene_id) === String(scene.id)));
 
     return matchesSearch && matchesFilter;
   });
@@ -687,15 +689,19 @@ const handleRemoveLogo = async () => {
                   ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'
                   : 'space-y-4'
                   }`}>
-                  {paginatedScenes.map((scene) => (
-                    <SceneCard
-                      key={scene.id}
-                      scene={scene}
-                      href={`/admin/virtual-tour-section/scenes/${scene.id}/edit-links`}
-                      viewMode={viewMode}
-                      isInMenu={menus.some(menu => menu.scene_id === scene.id)}
-                    />
-                  ))}
+                  {paginatedScenes.map((scene) => {
+                    const isInMenu = menus.some(menu => String(menu.scene_id) === String(scene.id));
+                    console.log(`Scene ${scene.id} (${scene.name}) - isInMenu:`, isInMenu, 'menus:', menus.map(m => ({id: m.id, scene_id: m.scene_id, name: m.name})));
+                    return (
+                      <SceneCard
+                        key={scene.id}
+                        scene={scene}
+                        href={`/admin/virtual-tour-section/scenes/${scene.id}/edit-links`}
+                        viewMode={viewMode}
+                        isInMenu={isInMenu}
+                      />
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
@@ -781,7 +787,7 @@ const handleRemoveLogo = async () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddMenu}
-        scenes={scenes.filter(scene => !menus.some(menu => menu.scene_id === scene.id))}
+        scenes={scenes.filter(scene => !menus.some(menu => String(menu.scene_id) === String(scene.id)))}
         isSaving={isSaving}
       />
       <DeleteConfirmationModal
