@@ -40,4 +40,19 @@ PassengerNodejs "/home/wisataju/nodevenv/sistem-informasi-manajemen_PMM-JEMBER/v
 PassengerAppType node
 PassengerStartupFile server.js
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+<<<<<<< Updated upstream
 # OPTIONAL: jika mau akses /api dan /storage langsung ke backend
+=======
+
+# OPTIONAL: jika mau akses /api dan /storage langsung ke backend
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
+<IfModule Litespeed>
+SetEnv NEXT_PUBLIC_STORAGE_URL https://api.wisatajubung.com/storage
+SetEnv NEXT_PUBLIC_API_URL https://api.wisatajubung.com
+SetEnv NEXT_PUBLIC_APP_URL https://wisatajubung.com
+SetEnv NEXT_PUBLIC_VIRTUAL_TOUR_ASSETS_URL /assets/virtual-tour
+SetEnv NEXT_PUBLIC_PANNELLUM_CDN https://cdn.jsdelivr.net/npm/pannellum@2.5.6
+SetEnv NODE_ENV production
+</IfModule>
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
+>>>>>>> Stashed changes

@@ -70,12 +70,12 @@ export default function HomePage() {
           <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-6 leading-tight">
             Virtual Tour
             <br />
-            <span className="text-4xl md:text-6xl">Kebun Jubung</span>
+            <span className="text-4xl md:text-6xl">Wisata Jubung</span>
           </h1>
           
           {/* Enhanced subtitle */}
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-            Jelajahi keindahan alam Kebun Jubung melalui pengalaman virtual tour yang menakjubkan. 
+            Jelajahi keindahan alam desa Jubung melalui pengalaman virtual tour yang menakjubkan. 
             Rasakan sensasi berjalan-jalan di tengah kehijauan tanpa batas waktu dan tempat.
           </p>
           
@@ -132,7 +132,7 @@ export default function HomePage() {
               <MapPin className="w-10 h-10 text-emerald-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-emerald-600 transition-colors">Eksplorasi Interaktif</h3>
-            <p className="text-gray-600 leading-relaxed mb-4">Jelajahi setiap sudut kebun dengan navigasi 360° yang mudah dan intuitif. Rasakan pengalaman immersive yang tak terlupakan.</p>
+            <p className="text-gray-600 leading-relaxed mb-4">Jelajahi setiap sudut wisata dengan navigasi 360° yang mudah dan intuitif. Rasakan pengalaman immersive yang tak terlupakan.</p>
             <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-medium">
               <Globe size={16} />
               <span>Navigasi 360°</span>
@@ -160,7 +160,7 @@ export default function HomePage() {
               <Leaf className="w-10 h-10 text-cyan-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-cyan-600 transition-colors">Ramah Lingkungan</h3>
-            <p className="text-gray-600 leading-relaxed mb-4">Kunjungi kebun tanpa meninggalkan jejak karbon, kapan saja dan dimana saja dengan teknologi virtual.</p>
+            <p className="text-gray-600 leading-relaxed mb-4">Kunjungi wisata tanpa meninggalkan jejak karbon, kapan saja dan dimana saja dengan teknologi virtual.</p>
             <div className="flex items-center justify-center gap-2 text-sm text-cyan-600 font-medium">
               <Headphones size={16} />
               <span>Audio Narasi</span>
@@ -178,7 +178,7 @@ export default function HomePage() {
                 <Leaf className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                Virtual Tour Kebun Jubung
+                Virtual Tour Wisata Jubung
               </h3>
             </div>
             <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
@@ -216,7 +216,7 @@ export default function HomePage() {
           
           <div className="text-center border-t border-white/20 pt-6">
             <p className="text-gray-600 mb-2">
-              © 2025 Virtual Tour Kebun Jubung. Dibuat dengan 
+              © 2025 Virtual Tour Wisata Jubung. Dibuat dengan 
               <span className="text-red-500 mx-1">❤️</span> 
               untuk pelestarian alam.
             </p>

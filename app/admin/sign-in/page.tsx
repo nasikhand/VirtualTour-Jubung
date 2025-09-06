@@ -143,7 +143,7 @@ export default function AdminSignInPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-400">
-            © 2024 Kebun Jubung System. All rights reserved.
+            © 2025 Wisata Jubung System. All rights reserved.
           </p>
         </div>
       </div>
