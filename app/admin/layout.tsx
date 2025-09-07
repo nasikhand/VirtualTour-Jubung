@@ -1,47 +1,55 @@
 // File: app/admin/layout.tsx
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
-// (Opsional) Anda bisa menghapus AuthContext jika benar-benar tidak dipakai lagi.
-// import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import SidebarAdmin from "@/components/admin/sidebar-admin";
 
 const SIGN_IN_PATHS = ["/admin/sign-in"];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  // const { user, loading } = useAuth(); // ❌ Dinonaktifkan: kita tidak pakai auth sama sekali
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
 
-  // ❌ Blokir seluruh mekanisme auth:
-  // - Tidak ada status loading
-  // - Tidak ada redirect ke /admin/sign-in
-  // - Semua halaman diperlakukan "authenticated"
-  const isAuthenticated = true;
-  const isLoading = false;
+  const isAuthenticated = !!user;
+  const isLoading = loading;
   const isSignInPage = !!pathname && SIGN_IN_PATHS.includes(pathname);
 
-  // ❌ Hapus/komentari efek redirect (tidak dipakai)
-  // useEffect(() => {
-  //   if (!isLoading && !isAuthenticated && !isSignInPage) {
-  //     router.replace("/admin/sign-in");
-  //   }
-  // }, [isLoading, isAuthenticated, isSignInPage]);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isSignInPage) {
+      // ✅ PERBAIKAN: Redirect ke path yang benar
+      router.replace("/admin/sign-in");
+    }
+  }, [isLoading, isAuthenticated, isSignInPage, router]);
 
-  // ❌ Tidak ada spinner loading berbasis auth
-  // if (isLoading) { ... }
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <p className="ml-3 text-gray-600">Memeriksa autentikasi...</p>
+      </div>
+    );
+  }
 
-  // ❌ Tidak ada cabang "render sign-in tanpa sidebar"
-  // if (isSignInPage || !isAuthenticated) { ... }
+  // Halaman sign-in: render apa adanya (tanpa sidebar)
+  if (isSignInPage || !isAuthenticated) {
+    return (
+      <>
+        {children}
+        <Toaster position="top-center" />
+      </>
+    );
+  }
 
-  // ✅ Selalu render layout admin penuh
+  // Layout admin penuh untuk user yang sudah login
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <SidebarAdmin />
       <main className="lg:pl-64">
-        <div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 pt-16 lg:pt-4">
-          {children}
-        </div>
+        <div className="px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 pt-16 lg:pt-4">{children}</div>
       </main>
       <Toaster position="top-center" />
     </div>
