@@ -93,7 +93,7 @@ const fetchData = async () => {
       const sceneData = await sceneRes.json();
       setScenes(sceneData.data ?? []);
     } else {
-      toast.error('Gagal memuat daftar scene');
+      toast.error('Gagal memuat daftar spot');
     }
 
     if (settingsRes.ok) {
@@ -133,7 +133,7 @@ const fetchData = async () => {
     setIsSaving(true);
     try {
       if (menus.some(menu => String(menu.scene_id) === String(data.scene_id))) {
-        toast.error('Scene ini sudah ada di dalam menu.');
+        toast.error('Spot ini sudah ada di dalam menu.');
         return;
       }
       await createVtourMenu(data);
@@ -367,7 +367,7 @@ const handleRemoveLogo = async () => {
                     Manajemen Virtual Tour
                   </h1>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 text-lg">Kelola menu navigasi dan scene virtual tour dengan mudah</p>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">Kelola menu navigasi dan spot virtual tour dengan mudah</p>
               </div>
 
               <div className="flex items-center gap-4">
@@ -389,7 +389,7 @@ const handleRemoveLogo = async () => {
                   <div className="bg-white dark:bg-gray-800 px-6 py-3 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Total Scene:</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Total Spot:</span>
                       <span className="font-bold text-blue-600 dark:text-blue-400">{isLoading ? '...' : scenes.length}</span>
                     </div>
                   </div>
@@ -589,8 +589,8 @@ const handleRemoveLogo = async () => {
                     <Eye className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Kelola Scene Virtual Tour</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Atur dan kelola semua scene dalam virtual tour</p>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Kelola Spot Navigasi</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Atur dan kelola semua spot dalam virtual tour</p>
                   </div>
                 </div>
 
@@ -600,7 +600,7 @@ const handleRemoveLogo = async () => {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
                     <input
                       type="text"
-                      placeholder="Cari scene..."
+                      placeholder="Cari spot..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full sm:w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 shadow-sm transition-all duration-200"
@@ -612,7 +612,7 @@ const handleRemoveLogo = async () => {
                     onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
                     className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                   >
-                    <option value="all">Semua Scene</option>
+                    <option value="all">Semua Spot</option>
                     <option value="active">Aktif di Menu</option>
                     <option value="inactive">Belum di Menu</option>
                   </select>
@@ -652,7 +652,7 @@ const handleRemoveLogo = async () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {isLoading ? 'Memuat...' : `Menampilkan ${paginatedScenes.length} dari ${filteredScenes.length} scene`}
+                      {isLoading ? 'Memuat...' : `Menampilkan ${paginatedScenes.length} dari ${filteredScenes.length} spot`}
                     </p>
                     {searchTerm && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -691,7 +691,7 @@ const handleRemoveLogo = async () => {
                   }`}>
                   {paginatedScenes.map((scene) => {
                     const isInMenu = menus.some(menu => String(menu.scene_id) === String(scene.id));
-                    console.log(`Scene ${scene.id} (${scene.name}) - isInMenu:`, isInMenu, 'menus:', menus.map(m => ({id: m.id, scene_id: m.scene_id, name: m.name})));
+                    console.log(`Spot ${scene.id} (${scene.name}) - isInMenu:`, isInMenu, 'menus:', menus.map(m => ({id: m.id, scene_id: m.scene_id, name: m.name})));
                     return (
                       <SceneCard
                         key={scene.id}
@@ -708,9 +708,9 @@ const handleRemoveLogo = async () => {
                   <div className="p-6 bg-gray-100 dark:bg-gray-700 rounded-full mb-6">
                     <Eye size={48} className="opacity-50" />
                   </div>
-                  <p className="text-xl font-semibold mb-3">Tidak ada scene ditemukan</p>
+                  <p className="text-xl font-semibold mb-3">Tidak ada Spot ditemukan</p>
                   <p className="text-sm text-center max-w-md">
-                    {searchTerm ? `Tidak ada scene yang cocok dengan "${searchTerm}"` : 'Belum ada scene yang dibuat untuk virtual tour ini'}
+                    {searchTerm ? `Tidak ada spot yang cocok dengan "${searchTerm}"` : 'Belum ada spot yang dibuat untuk virtual tour ini'}
                   </p>
                   {searchTerm && (
                     <button

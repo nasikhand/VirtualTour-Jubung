@@ -101,7 +101,7 @@ export default function VirtualTourClientPage({
             >
               <img 
                 src={logoUrl} 
-                alt="Logo Kebun Jubung" 
+                alt="Logo Wisata Jubung" 
                 className="h-16 md:h-20 lg:h-24 w-auto drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl" 
               />
               {/* Hover overlay */}
@@ -137,14 +137,14 @@ export default function VirtualTourClientPage({
             </button>
           )}
 
-          {/* Reset View */}
+          {/* Reset View
           <button
             onClick={resetView}
             className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
             title="Reset Tampilan"
           >
             <RotateCcw size={20} />
-          </button>
+          </button> */}
 
           {/* Fullscreen Toggle */}
           <button

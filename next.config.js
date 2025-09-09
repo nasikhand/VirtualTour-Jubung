@@ -20,7 +20,7 @@ const nextConfig = {
       'localhost',
       '127.0.0.1',
       'wisatajubung.com',
-      'vtour.wisatajubung.com',
+      'virtualtour.wisatajubung.com',
     ],
     remotePatterns: [
       {
@@ -42,7 +42,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'vtour.wisatajubung.com',
+        hostname: 'virtualtour.wisatajubung.com',
         pathname: '/storage/**',
       },
     ],
@@ -52,9 +52,9 @@ const nextConfig = {
 
   env: {
     NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL || 'https://wisatajubung.com/api',
+      process.env.NEXT_PUBLIC_API_URL || 'https://api.wisatajubung.com',
     NEXT_PUBLIC_VTOUR_API_URL:
-      process.env.NEXT_PUBLIC_VTOUR_API_URL || 'https://wisatajubung.com/api',
+      process.env.NEXT_PUBLIC_VTOUR_API_URL || 'https://virtualtour.wisatajubung.com',
   },
 
   webpack: (config, { isServer }) => {

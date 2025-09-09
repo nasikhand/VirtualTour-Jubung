@@ -1,18 +1,16 @@
-
 import axios, { AxiosError } from "axios";
 import type { Scene } from "@/types/virtual-tour";
-
 
 /** Base URL dari environment variable */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 /**
  * Catatan:
- * - Karena baseURL SUDAH di /api, JANGAN pakai path yang diawali /api lagi.
- * - Gunakan path seperti "/login/..." atau "/vtour/..." (tanpa /api).
+ * - baseURL sudah termasuk /api, jadi path endpoint TIDAK usah diawali "api/"
+ *   contoh benar: "/vtour/scenes", "login/vtour-admin", "/vtour/menus", dst.
  */
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -73,12 +71,12 @@ const getAxiosMessage = (err: unknown) => {
   return ax.response?.data?.message || ax.message || "Request error";
 };
 
-// ----------------- AUTH API -----------------
+// ----------------- AUTH API (tanpa 'api/' di depan) -----------------
 export const authAPI = {
   login: async (username: string, password: string) => {
     try {
-      // BASE SUDAH /api → path TANPA /api
-      const { data } = await apiClient.post("api/login/vtour-admin", {
+      // baseURL sudah /api -> path cukup "login/vtour-admin"
+      const { data } = await apiClient.post("login/vtour-admin", {
         username,
         password,
       });
@@ -110,7 +108,8 @@ export const authAPI = {
 
   getProfile: async () => {
     try {
-      const { data } = await apiClient.get("api/login/vtour-admin/profile");
+      // JANGAN pakai "/api/login/..." lagi
+      const { data } = await apiClient.get("login/vtour-admin/profile");
       const payload = (data && (data as any).data) ? (data as any).data : data;
       return payload?.user ?? payload?.admin ?? payload;
     } catch (err) {
@@ -120,7 +119,7 @@ export const authAPI = {
 
   logout: async () => {
     try {
-      const { data } = await apiClient.post("api//login/vtour-admin/logout");
+      const { data } = await apiClient.post("login/vtour-admin/logout");
       return data;
     } catch (err) {
       throw new Error(getAxiosMessage(err));
@@ -128,67 +127,66 @@ export const authAPI = {
   },
 };
 
-// ----------------- VTOUR API -----------------
+// ----------------- VTOUR API (tetap) -----------------
 export const vtourAPI = {
   getScenes: async (page = 1) => {
-    const res = await apiClient.get(`/api/vtour/scenes`, { params: { page } });
+    const res = await apiClient.get(`/vtour/scenes`, { params: { page } });
     return res.data;
   },
   getScene: async (id: string | number): Promise<Scene | null> => {
-  const res = await apiClient.get(`/api/vtour/scenes/${id}`);
-  // backend kadang kirim { data: {...} } atau langsung {...}
-  const payload =
-    (res.data && typeof res.data === "object" && "data" in res.data)
-      ? (res.data as any).data
-      : res.data;
-  return (payload ?? null) as Scene | null;
-},
+    const res = await apiClient.get(`/vtour/scenes/${id}`);
+    const payload =
+      (res.data && typeof res.data === "object" && "data" in res.data)
+        ? (res.data as any).data
+        : res.data;
+    return (payload ?? null) as Scene | null;
+  },
   createScene: async (formData: FormData) => {
-    const res = await apiClient.post("/api/vtour/scenes", formData, {
+    const res = await apiClient.post("/vtour/scenes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
   },
   updateScene: async (id: string | number, data: any) => {
-    const res = await apiClient.put(`/api/vtour/scenes/${id}`, data);
+    const res = await apiClient.put(`/vtour/scenes/${id}`, data);
     return res.data;
   },
   deleteScene: async (id: string | number) => {
-    const res = await apiClient.delete(`/api/vtour/scenes/${id}`);
+    const res = await apiClient.delete(`/vtour/scenes/${id}`);
     return res.data;
   },
 
   getMenus: async () => {
-    const res = await apiClient.get("/api/vtour/menus");
+    const res = await apiClient.get("/vtour/menus");
     return res.data;
   },
   createMenu: async (data: any) => {
-    const res = await apiClient.post("/api/vtour/menus", data);
+    const res = await apiClient.post("/vtour/menus", data);
     return res.data;
   },
   updateMenu: async (id: string | number, data: any) => {
-    const res = await apiClient.put(`/api/vtour/menus/${id}`, data);
+    const res = await apiClient.put(`/vtour/menus/${id}`, data);
     return res.data;
   },
   deleteMenu: async (id: string | number) => {
-    const res = await apiClient.delete(`/api/vtour/menus/${id}`);
+    const res = await apiClient.delete(`/vtour/menus/${id}`);
     return res.data;
   },
 
   getHotspots: async (sceneId: string | number) => {
-    const res = await apiClient.get(`/api/vtour/scenes/${sceneId}/hotspots`);
+    const res = await apiClient.get(`/vtour/scenes/${sceneId}/hotspots`);
     return res.data;
   },
   createHotspot: async (sceneId: string | number, data: any) => {
-    const res = await apiClient.post(`/api/vtour/scenes/${sceneId}/hotspots`, data);
+    const res = await apiClient.post(`/vtour/scenes/${sceneId}/hotspots`, data);
     return res.data;
   },
   updateHotspot: async (sceneId: string | number, hotspotId: string | number, data: any) => {
-    const res = await apiClient.put(`/api/vtour/scenes/${sceneId}/hotspots/${hotspotId}`, data);
+    const res = await apiClient.put(`/vtour/scenes/${sceneId}/hotspots/${hotspotId}`, data);
     return res.data;
   },
   deleteHotspot: async (sceneId: string | number, hotspotId: string | number) => {
-    const res = await apiClient.delete(`/api/vtour/scenes/${sceneId}/hotspots/${hotspotId}`);
+    const res = await apiClient.delete(`/vtour/scenes/${sceneId}/hotspots/${hotspotId}`);
     return res.data;
   },
 };

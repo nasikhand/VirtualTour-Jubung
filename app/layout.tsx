@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Virtual Tour Kebun Jubung",
-  description: "Sistem Virtual Tour 360° untuk Kebun Jubung - PMM Jember",
-  keywords: ["virtual tour", "360°", "kebun jubung", "pmm jember", "panorama"],
+  title: "Virtual Tour Wisata Jubung",
+  description: "Sistem Virtual Tour 360° untuk Wisata Jubung - PMM Jember",
+  keywords: ["virtual tour", "360°", "wisata jubung", "pmm jember", "panorama"],
   authors: [{ name: "PMM Jember" }],
 };
 

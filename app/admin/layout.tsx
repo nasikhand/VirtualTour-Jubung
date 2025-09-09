@@ -10,20 +10,20 @@ import SidebarAdmin from "@/components/admin/sidebar-admin";
 const SIGN_IN_PATHS = ["/admin/sign-in"];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   const isAuthenticated = !!user;
-  const isLoading = loading;
+  const isLoading = loading || !initialized;
   const isSignInPage = !!pathname && SIGN_IN_PATHS.includes(pathname);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !isSignInPage) {
-      // ✅ PERBAIKAN: Redirect ke path yang benar
+    // Only redirect after auth is fully initialized
+    if (initialized && !loading && !isAuthenticated && !isSignInPage) {
       router.replace("/admin/sign-in");
     }
-  }, [isLoading, isAuthenticated, isSignInPage, router]);
+  }, [initialized, loading, isAuthenticated, isSignInPage, router]);
 
   if (isLoading) {
     return (

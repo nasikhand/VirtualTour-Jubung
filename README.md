@@ -1,6 +1,6 @@
-# Virtual Tour Kebun Jubung
+# Virtual Tour Wisata Jubung
 
-Sistem Virtual Tour untuk Kebun Jubung - PMM Jember. Aplikasi Next.js standalone yang dioptimalkan khusus untuk virtual tour menggunakan teknologi Pannellum.
+Sistem Virtual Tour untuk Wisata Jubung - PMM Jember. Aplikasi Next.js standalone yang dioptimalkan khusus untuk virtual tour menggunakan teknologi Pannellum.
 
 ## 🚀 Fitur Utama
 

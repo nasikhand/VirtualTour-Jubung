@@ -12,12 +12,12 @@ export const sidebarMenuAdmin = [
     icon: Camera,
     children: [
       {
-        label: 'Manajemen Scene',
+        label: 'Manajemen Spot',
         href: '/admin/virtual-tour-section',
         icon: Image
       },
       {
-        label: 'Manajemen Menu',
+        label: 'Manajemen Navigasi',
         href: '/admin/virtual-tour-hotspots',
         icon: Menu
       }

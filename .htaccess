@@ -1,3 +1,10 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/wisataju/sistem-informasi-manajemen_PMM-JEMBER/virtual-tour"
+PassengerBaseURI "/"
+PassengerNodejs "/home/wisataju/nodevenv/sistem-informasi-manajemen_PMM-JEMBER/virtual-tour/18/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 RewriteEngine On
 # Forward all requests ke Next.js yang jalan di port 3001
 RewriteCond %{REQUEST_URI} !^/api

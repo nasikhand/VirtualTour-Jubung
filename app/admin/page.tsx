@@ -63,16 +63,16 @@ export default function AdminWelcomePage() {
 
   const quickActions = [
     {
-      title: 'Tambah Scene Baru',
-      description: 'Buat scene panorama baru',
+      title: 'Tambah Spot Baru',
+      description: 'Buat spot panorama baru',
       icon: Camera,
       href: '/admin/virtual-tour-section',
       color: 'from-blue-500 to-blue-600',
       hoverColor: 'hover:from-blue-600 hover:to-blue-700'
     },
     {
-      title: 'Kelola Hotspots',
-      description: 'Atur hotspot dan navigasi',
+      title: 'Kelola Navigasi',
+      description: 'Atur navigasi menu dan hotspot',
       icon: MapPin,
       href: '/admin/virtual-tour-hotspots',
       color: 'from-green-500 to-green-600',
@@ -124,7 +124,7 @@ export default function AdminWelcomePage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium">Total Scenes</p>
+                  <p className="text-blue-100 text-sm font-medium">Total Spot</p>
                   <p className="text-3xl font-bold">{loading ? '...' : stats.totalScenes}</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-full">

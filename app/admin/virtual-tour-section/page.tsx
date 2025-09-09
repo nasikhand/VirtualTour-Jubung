@@ -44,12 +44,12 @@ const EmptyState = () => (
       <ImageOff className="text-blue-500 dark:text-blue-400" size={40} />
     </div>
     <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
-      Belum Ada Scene Ditemukan
+      Belum Ada Spot Ditemukan
     </h2>
     <p className="mt-2 text-gray-600 dark:text-gray-300 max-w-md">
       Mulai dengan menekan tombol{' '}
-      <strong className="text-blue-600 dark:text-blue-400">"+ Tambah Scene"</strong>{' '}
-      di pojok kanan atas untuk membuat scene virtual tour pertama Anda.
+      <strong className="text-blue-600 dark:text-blue-400">"+ Tambah Spot"</strong>{' '}
+      di pojok kanan atas untuk membuat spot virtual tour pertama Anda.
     </p>
   </div>
 )
@@ -82,7 +82,7 @@ export default function VtourScenePage() {
         })
       ])
 
-      if (!scenesRes.ok) throw new Error('Gagal fetch scenes')
+      if (!scenesRes.ok) throw new Error('Gagal fetch spot')
 
       const scenesData = await scenesRes.json()
       const dataList: Scene[] = Array.isArray(scenesData?.data) ? scenesData.data : []
@@ -104,7 +104,7 @@ export default function VtourScenePage() {
         console.error('Error fetching data:', toError(err))
         setScenes([])
         setMenus([])
-        toast.error('Gagal memuat data scene/menus')
+        toast.error('Gagal memuat data spot/menus')
       }
     } finally {
       setLoading(false)
@@ -159,15 +159,15 @@ export default function VtourScenePage() {
       )
 
       if (response.ok) {
-        toast.success('Scene berhasil dihapus!')
+        toast.success('Spot berhasil dihapus!')
         await loadScenes(currentPage)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        toast.error(errorData?.message || 'Gagal menghapus scene')
+        toast.error(errorData?.message || 'Gagal menghapus spot')
       }
     } catch (err: unknown) {
-      console.error('Error deleting scene:', toError(err))
-      toast.error('Terjadi kesalahan saat menghapus scene')
+      console.error('Error deleting spot:', toError(err))
+      toast.error('Terjadi kesalahan saat menghapus spot')
     } finally {
       setIsDeleting(false)
       setSceneToDelete(null)
@@ -180,7 +180,7 @@ export default function VtourScenePage() {
 
     return (
       <>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {scenes.map(scene => (
             <SceneCard
               key={scene.id}
@@ -248,7 +248,7 @@ export default function VtourScenePage() {
                 Manajemen Virtual Tour
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Kelola scene dan hotspot virtual tour Anda
+                Kelola Spot dan hotspot Informasi virtual tour Anda
               </p>
             </div>
 
@@ -261,7 +261,7 @@ export default function VtourScenePage() {
                 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-60"
             >
               <Plus size={18} />
-              Tambah Scene
+              Tambah Spot
             </button>
           </div>
 
@@ -282,10 +282,10 @@ export default function VtourScenePage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl max-w-sm w-full">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Hapus Scene
+              Hapus Spot
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Apakah Anda yakin ingin menghapus scene{' '}
+              Apakah Anda yakin ingin menghapus spot{' '}
               <strong>{sceneToDelete.name}</strong>?
             </p>
             <div className="flex justify-end gap-3">
